@@ -309,6 +309,67 @@
     #app { max-width: 480px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,0.12); }
     body { background: #E8E4DC; display: flex; justify-content: center; }
   }
+
+  /* ── MODAL TECH CARD ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 200; display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-box {
+    background: var(--white); border-radius: 20px 20px 0 0;
+    width: 100%; max-height: 88dvh; overflow-y: auto;
+    padding: 0 0 32px; transform: translateY(60px);
+    transition: transform 0.3s cubic-bezier(.34,1.2,.64,1);
+  }
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+  .modal-handle { width: 40px; height: 4px; background: var(--cream-dark); border-radius: 2px; margin: 12px auto 0; }
+  .modal-head { padding: 14px 18px 10px; border-bottom: 1px solid var(--cream); }
+  .modal-title { font-size: 18px; font-weight: 800; color: var(--text-dark); }
+  .modal-sub { font-size: 13px; color: var(--text-soft); margin-top: 2px; }
+  .modal-body { padding: 14px 18px; }
+  .tc-fact {
+    background: linear-gradient(135deg, #E8F5E9, #F1F8E9);
+    border-left: 4px solid var(--green-light);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+    font-size: 13px; color: var(--text-dark); line-height: 1.5;
+  }
+  .tc-fact::before { content: '💡 '; }
+  .tc-meta {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 14px;
+  }
+  .tc-meta-item {
+    background: var(--cream); border-radius: 10px; padding: 10px 6px; text-align: center;
+  }
+  .tc-meta-val { font-size: 16px; font-weight: 800; color: var(--green-deep); }
+  .tc-meta-lbl { font-size: 10px; color: var(--text-soft); margin-top: 2px; }
+  .tc-section { font-size: 11px; font-weight: 800; letter-spacing: 0.7px;
+    text-transform: uppercase; color: var(--text-soft); margin: 12px 0 8px; }
+  .tc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px; }
+  .tc-table th { background: var(--green-deep); color: white; padding: 7px 8px;
+    text-align: left; font-weight: 700; }
+  .tc-table th:not(:first-child) { text-align: right; }
+  .tc-table td { padding: 6px 8px; border-bottom: 1px solid var(--cream); color: var(--text-dark); }
+  .tc-table td:not(:first-child) { text-align: right; color: var(--text-mid); }
+  .tc-table tr:last-child td { border-bottom: none; font-weight: 700; }
+  .tc-tech {
+    background: var(--cream); border-radius: 10px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.65; color: var(--text-dark);
+  }
+  .modal-close {
+    position: absolute; top: 14px; right: 16px;
+    border: none; background: var(--cream); border-radius: 50%;
+    width: 32px; height: 32px; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; color: var(--text-mid);
+  }
+  .tc-btn {
+    border: 1.5px solid var(--green-light); background: transparent;
+    color: var(--green-deep); border-radius: 20px; padding: 3px 10px;
+    font-family: 'Nunito', sans-serif; font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .tc-btn:hover { background: var(--green-deep); color: white; }
 </style>
 </head>
 <body>
@@ -392,28 +453,451 @@
   </div>
 </div>
 
+
+<!-- TECH CARD MODAL -->
+<div class="modal-overlay" id="tcModal" onclick="closeTCModal(event)">
+  <div class="modal-box" id="tcBox">
+    <button class="modal-close" onclick="closeTCModal()">✕</button>
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title" id="tcTitle"></div>
+      <div class="modal-sub" id="tcSub"></div>
+    </div>
+    <div class="modal-body" id="tcBody"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ══ DATA ══════════════════════════════════════════════════
 const MENU = [
-  { id:1, cat:'Перші страви',   emoji:'🍲', name:'Борщ',             sub:'з пампушкою',     price:35 },
-  { id:2, cat:'Перші страви',   emoji:'🥣', name:'Суп гороховий',   sub:'з хлібом',        price:28 },
-  { id:3, cat:'Перші страви',   emoji:'🍜', name:'Юшка курина',     sub:'з локшиною',      price:32 },
-  { id:4, cat:'Другі страви',   emoji:'🍗', name:'Котлета парова',  sub:'з пюре',          price:55 },
-  { id:5, cat:'Другі страви',   emoji:'🥩', name:'Гуляш яловичий', sub:'з гречкою',       price:62 },
-  { id:6, cat:'Другі страви',   emoji:'🐟', name:'Риба запечена',   sub:'з рисом',         price:58 },
-  { id:7, cat:'Другі страви',   emoji:'🫕', name:'Тушкована капуста','sub':'з морквою',    price:38 },
-  { id:8, cat:'Гарніри',        emoji:'🥔', name:'Пюре картопляне', sub:'зі сметаною',     price:22 },
-  { id:9, cat:'Гарніри',        emoji:'🌾', name:'Гречка відварна', sub:'з маслом',        price:20 },
-  { id:10,cat:'Гарніри',        emoji:'🍚', name:'Рис з овочами',   sub:'по-азіатськи',    price:24 },
-  { id:11,cat:'Салати',         emoji:'🥗', name:'Олів'є',          sub:'класичний',       price:30 },
-  { id:12,cat:'Салати',         emoji:'🥕', name:'Салат з буряком', sub:'з часником',      price:22 },
-  { id:13,cat:'Напої',          emoji:'🍵', name:'Чай чорний',      sub:'з лимоном',       price:12 },
-  { id:14,cat:'Напої',          emoji:'☕', name:'Компот',          sub:'з сухофруктів',   price:15 },
-  { id:15,cat:'Напої',          emoji:'🥛', name:'Кефір',           sub:'250 мл',          price:18 },
-  { id:16,cat:'Хлібобулочні',   emoji:'🍞', name:'Хліб пшеничний', sub:'2 скибки',        price:6  },
-  { id:17,cat:'Хлібобулочні',   emoji:'🥐', name:'Булочка',         sub:'з маком',         price:14 },
+  // ── ПЕРШІ СТРАВИ ──
+  {
+    id:1, cat:'Перші страви', emoji:'🍲', name:'Борщ київський', sub:'з чорносливом та квасолею', price:38,
+    techcard:{
+      yield:500, cal:185, b:6.2, f:7.8, c:24.1,
+      fact:'Чорнослив додає легку кислинку і робить борщ насиченішим без оцту.',
+      ingredients:[
+        {name:'Буряк',            brutto:120,netto:100,loss:17},
+        {name:'Капуста свіжа',    brutto:110,netto:100,loss:9},
+        {name:'Картопля',         brutto:130,netto:100,loss:23},
+        {name:'Морква',           brutto:65, netto:55, loss:15},
+        {name:'Цибуля ріпчаста',  brutto:60, netto:50, loss:17},
+        {name:'Квасоля варена',   brutto:60, netto:60, loss:0},
+        {name:'Чорнослив б/к',    brutto:30, netto:28, loss:7},
+        {name:'Томатна паста',    brutto:25, netto:25, loss:0},
+        {name:'Олія',             brutto:15, netto:15, loss:0},
+        {name:'Часник',           brutto:8,  netto:6,  loss:25},
+        {name:'Бульйон м\'ясний', brutto:500,netto:500,loss:0},
+        {name:'Сіль, лавр, перець',brutto:5, netto:5,  loss:0},
+      ],
+      tech:'Буряк нарізати соломкою, тушкувати з томатною пастою 15 хв. Картоплю нарізати кубиком, додати в киплячий бульйон. Через 10 хв додати капусту, засмажку з цибулею та морквою, тушкований буряк, квасолю, чорнослив. Варити 10 хв. Заправити часником, сіллю, спеціями.',
+    }
+  },
+  {
+    id:2, cat:'Перші страви', emoji:'🥣', name:'Суп-пюре з сочевиці', sub:'з копченою паприкою', price:34,
+    techcard:{
+      yield:400, cal:210, b:14.5, f:5.2, c:28.3,
+      fact:'Червона сочевиця не потребує замочування і вариться 20 хв — ідеальна для їдальні.',
+      ingredients:[
+        {name:'Сочевиця червона', brutto:120,netto:120,loss:0},
+        {name:'Цибуля ріпчаста',  brutto:80, netto:67, loss:16},
+        {name:'Морква',           brutto:80, netto:68, loss:15},
+        {name:'Часник',           brutto:10, netto:8,  loss:20},
+        {name:'Паприка копчена',  brutto:5,  netto:5,  loss:0},
+        {name:'Куркума',          brutto:2,  netto:2,  loss:0},
+        {name:'Олія оливкова',    brutto:20, netto:20, loss:0},
+        {name:'Бульйон або вода', brutto:600,netto:600,loss:0},
+        {name:'Лимонний сік',     brutto:10, netto:10, loss:0},
+        {name:'Сіль, перець',     brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Цибулю, моркву, часник пасерувати на олії 5 хв. Додати паприку, куркуму, сочевицю, залити бульйоном. Варити 20 хв до м\'якості. Збити блендером до однорідності. Додати лимонний сік. Подавати з грінками.',
+    }
+  },
+  {
+    id:3, cat:'Перші страви', emoji:'🍜', name:'Юшка курина', sub:'з домашньою локшиною', price:36,
+    techcard:{
+      yield:500, cal:165, b:11.8, f:5.9, c:17.2,
+      fact:'Домашня яєчна локшина надає бульйону насиченість, якої немає у пакетної.',
+      ingredients:[
+        {name:'Курка (частини)',   brutto:200,netto:160,loss:20},
+        {name:'Локшина яєчна',    brutto:60, netto:60, loss:0},
+        {name:'Морква',           brutto:75, netto:63, loss:16},
+        {name:'Цибуля',           brutto:65, netto:54, loss:17},
+        {name:'Корінь петрушки',  brutto:20, netto:16, loss:20},
+        {name:'Картопля',         brutto:110,netto:85, loss:23},
+        {name:'Зелень',           brutto:15, netto:13, loss:13},
+        {name:'Сіль, перець, лавр',brutto:4, netto:4,  loss:0},
+      ],
+      tech:'Курку залити холодною водою, довести до кипіння, зняти піну. Додати цілу цибулину, моркву, корінь петрушки. Варити 50 хв. М\'ясо вийняти, відокремити від кісток. Бульйон процідити, додати картоплю, варити 10 хв, потім локшину і м\'ясо. Варити ще 5 хв, посипати зеленню.',
+    }
+  },
+  {
+    id:4, cat:'Перші страви', emoji:'🫕', name:'Розсольник по-московськи', sub:'з перловкою та солоними огірками', price:32,
+    techcard:{
+      yield:500, cal:175, b:7.4, f:6.8, c:22.5,
+      fact:'Перлова крупа, замочена з вечора, дає кремовий навар — суп виходить густим без загущувачів.',
+      ingredients:[
+        {name:'Яловичина (кістки)',brutto:200,netto:170,loss:15},
+        {name:'Крупа перлова',    brutto:40, netto:40, loss:0},
+        {name:'Огірки солоні',    brutto:100,netto:90, loss:10},
+        {name:'Картопля',         brutto:130,netto:100,loss:23},
+        {name:'Морква',           brutto:65, netto:55, loss:15},
+        {name:'Цибуля',           brutto:65, netto:54, loss:17},
+        {name:'Огірковий розсіл', brutto:50, netto:50, loss:0},
+        {name:'Томатна паста',    brutto:15, netto:15, loss:0},
+        {name:'Олія',             brutto:15, netto:15, loss:0},
+        {name:'Сметана',          brutto:20, netto:20, loss:0},
+        {name:'Сіль, перець, лавр',brutto:4, netto:4,  loss:0},
+      ],
+      tech:'Перловку замочити 4 год, відварити до напівготовності. М\'ясний бульйон варити 1,5 год, процідити. У бульйон додати картоплю, через 10 хв — перловку, пасеровані цибулю і моркву з томатом, нарізані солоні огірки. Влити розсіл, варити 10 хв. Подавати зі сметаною.',
+    }
+  },
+
+  // ── М'ЯСО ТА РИБА ──
+  {
+    id:5, cat:'М\'ясо та риба', emoji:'🥩', name:'Яловичина тушкована', sub:'з чорносливом і цибулею', price:72,
+    techcard:{
+      yield:120, cal:218, b:22.4, f:11.2, c:8.6,
+      fact:'Чорнослив при тушкуванні карамелізується і замінює цукор — соус стає насиченим без підсолоджувачів.',
+      ingredients:[
+        {name:'Яловичина (лопатка)',brutto:180,netto:150,loss:17},
+        {name:'Чорнослив б/к',    brutto:40, netto:37, loss:7},
+        {name:'Цибуля ріпчаста',  brutto:90, netto:75, loss:17},
+        {name:'Морква',           brutto:55, netto:47, loss:15},
+        {name:'Часник',           brutto:8,  netto:6,  loss:25},
+        {name:'Томатна паста',    brutto:20, netto:20, loss:0},
+        {name:'Борошно пшен.',    brutto:8,  netto:8,  loss:0},
+        {name:'Олія',             brutto:15, netto:15, loss:0},
+        {name:'Бульйон',          brutto:150,netto:150,loss:0},
+        {name:'Сіль, перець, лавр',brutto:4, netto:4,  loss:0},
+      ],
+      tech:'М\'ясо нарізати кубиками 40–50 г, посолити, обваляти в борошні, обсмажити до рум\'яної скоринки. Цибулю і моркву пасерувати. Скласти м\'ясо, овочі, чорнослив, часник у каструлю, додати томатну пасту, бульйон. Тушкувати під кришкою 1,5 год на малому вогні.',
+    }
+  },
+  {
+    id:6, cat:'М\'ясо та риба', emoji:'🍗', name:'Котлета по-домашньому', sub:'з начинкою із зелені та масла', price:58,
+    techcard:{
+      yield:130, cal:245, b:19.8, f:15.6, c:8.4,
+      fact:'Замість панірувальних сухарів — крихта білого хліба: тримає форму і залишається ніжнішою.',
+      ingredients:[
+        {name:'Свинина+яловичина (фарш)',brutto:160,netto:150,loss:6},
+        {name:'Цибуля',           brutto:50, netto:42, loss:16},
+        {name:'Часник',           brutto:5,  netto:4,  loss:20},
+        {name:'Хліб білий (м\'якуш)',brutto:30,netto:28,loss:7},
+        {name:'Молоко',           brutto:30, netto:30, loss:0},
+        {name:'Масло вершкове',   brutto:15, netto:15, loss:0},
+        {name:'Зелень (кріп+петр.)',brutto:15,netto:12,loss:20},
+        {name:'Яйце',             brutto:20, netto:18, loss:10},
+        {name:'Хліб (паніровка)', brutto:20, netto:20, loss:0},
+        {name:'Олія для смаження',brutto:20, netto:20, loss:0},
+        {name:'Сіль, перець',     brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Хліб замочити в молоці, відтиснути. Фарш змішати з цибулею (дрібно), часником, хлібом, яйцем, сіллю. Масло змішати із зеленню, сформувати кубики, заморозити 20 хв. У кожну котлету вкласти кубик масла. Панірувати у хлібній крихті. Смажити по 4 хв з кожного боку, довести в духовці при 180°С 10 хв.',
+    }
+  },
+  {
+    id:7, cat:'М\'ясо та риба', emoji:'🐟', name:'Минтай запечений', sub:'у гірчично-медовій глазурі', price:55,
+    techcard:{
+      yield:130, cal:158, b:24.6, f:5.8, c:4.2,
+      fact:'Гірчично-медова глазур карамелізується при 200°С і маскує специфічний запах минтаю.',
+      ingredients:[
+        {name:'Минтай (філе)',    brutto:180,netto:150,loss:17},
+        {name:'Гірчиця зернова', brutto:15, netto:15, loss:0},
+        {name:'Мед',             brutto:10, netto:10, loss:0},
+        {name:'Часник',          brutto:8,  netto:6,  loss:25},
+        {name:'Олія оливкова',   brutto:10, netto:10, loss:0},
+        {name:'Лимонний сік',    brutto:15, netto:15, loss:0},
+        {name:'Зелень',          brutto:10, netto:8,  loss:20},
+        {name:'Сіль, перець',    brutto:3,  netto:3,  loss:0},
+      ],
+      tech:'Філе промити, обсушити. Змішати гірчицю, мед, олію, лимонний сік, часник (подрібн.), сіль. Рибу змастити глазур\'ю з обох боків. Укласти на пергамент. Запікати при 200°С 18–20 хв до карамельної скоринки. Подавати з лимоном і зеленню.',
+    }
+  },
+  {
+    id:8, cat:'М\'ясо та риба', emoji:'🍳', name:'Печінка куряча', sub:'з карамельною цибулею і яблуком', price:48,
+    techcard:{
+      yield:130, cal:192, b:21.5, f:9.4, c:9.8,
+      fact:'Яблуко нейтралізує гіркоту печінки — старий французький прийом, що перетворює субпродукт у делікатес.',
+      ingredients:[
+        {name:'Печінка куряча',   brutto:180,netto:155,loss:14},
+        {name:'Цибуля ріпчаста',  brutto:150,netto:125,loss:17},
+        {name:'Яблуко (кисло-солодке)',brutto:80,netto:65,loss:19},
+        {name:'Масло вершкове',   brutto:20, netto:20, loss:0},
+        {name:'Олія',             brutto:10, netto:10, loss:0},
+        {name:'Борошно',          brutto:10, netto:10, loss:0},
+        {name:'Цукор',            brutto:5,  netto:5,  loss:0},
+        {name:'Бальзамічний оцет',brutto:5,  netto:5,  loss:0},
+        {name:'Чебрець',          brutto:2,  netto:2,  loss:0},
+        {name:'Сіль, перець',     brutto:3,  netto:3,  loss:0},
+      ],
+      tech:'Цибулю нарізати півкільцями, смажити на вершковому маслі 20 хв на малому вогні, додати цукор і бальзамік, карамелізувати ще 5 хв. Яблуко нарізати часточками, підсмажити окремо. Печінку обваляти в борошні, смажити на олії по 2–3 хв з кожного боку. Подавати з карамельною цибулею і яблуком зверху.',
+    }
+  },
+  {
+    id:9, cat:'М\'ясо та риба', emoji:'🫙', name:'Тефтелі парові', sub:'з індичого фаршу в томатному соусі', price:54,
+    techcard:{
+      yield:150, cal:196, b:20.2, f:8.5, c:10.6,
+      fact:'Індичий фарш з пшоном замість рису — кульки не розвалюються і мають ніжнішу текстуру.',
+      ingredients:[
+        {name:'Фарш з індички',  brutto:170,netto:160,loss:6},
+        {name:'Пшоно варене',    brutto:50, netto:50, loss:0},
+        {name:'Цибуля',          brutto:60, netto:50, loss:17},
+        {name:'Яйце',            brutto:20, netto:18, loss:10},
+        {name:'Томати у вл. соку',brutto:150,netto:150,loss:0},
+        {name:'Часник',          brutto:6,  netto:5,  loss:17},
+        {name:'Цукор',           brutto:5,  netto:5,  loss:0},
+        {name:'Олія',            brutto:10, netto:10, loss:0},
+        {name:'Зелень',          brutto:10, netto:8,  loss:20},
+        {name:'Сіль, перець',    brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Фарш змішати з пшоном, дрібно нарізаною цибулею, яйцем, сіллю. Сформувати кульки по 35–40 г. Томати подрібнити, пасерувати з часником і цукром 5 хв. Тефтелі укласти у форму, залити соусом, тушкувати в духовці при 180°С 30 хв. Посипати зеленню.',
+    }
+  },
+  {
+    id:10, cat:'М\'ясо та риба', emoji:'🥘', name:'Гуляш яловичий', sub:'з паприкою по-угорськи', price:68,
+    techcard:{
+      yield:130, cal:228, b:21.8, f:12.4, c:7.2,
+      fact:'Секрет угорського гуляшу — паприка додається двічі: на початку у жир і наприкінці свіжа, що дає багатошаровий аромат.',
+      ingredients:[
+        {name:'Яловичина (лопатка)',brutto:190,netto:158,loss:17},
+        {name:'Цибуля',           brutto:100,netto:83, loss:17},
+        {name:'Болгарський перець',brutto:80, netto:68, loss:15},
+        {name:'Паприка солодка',  brutto:12, netto:12, loss:0},
+        {name:'Паприка копчена',  brutto:5,  netto:5,  loss:0},
+        {name:'Часник',           brutto:8,  netto:6,  loss:25},
+        {name:'Томатна паста',    brutto:25, netto:25, loss:0},
+        {name:'Борошно',          brutto:8,  netto:8,  loss:0},
+        {name:'Олія',             brutto:15, netto:15, loss:0},
+        {name:'Бульйон',          brutto:200,netto:200,loss:0},
+        {name:'Сіль, перець, кмин',brutto:5, netto:5,  loss:0},
+      ],
+      tech:'М\'ясо нарізати кубиками 3×3 см. Цибулю пасерувати до золота, додати солодку паприку, перемішати. Додати м\'ясо, обсмажити. Додати борошно, томатну пасту, болгарський перець, часник, бульйон. Тушкувати 1,5 год. Наприкінці додати копчену паприку.',
+    }
+  },
+
+  // ── САЛАТИ ──
+  {
+    id:11, cat:'Салати', emoji:'🥗', name:'Грецький салат', sub:'з оливками і фетою', price:42,
+    techcard:{
+      yield:200, cal:182, b:5.8, f:14.2, c:9.6,
+      fact:'Оливкова олія першого холодного віджиму і орегано — єдина заправка, без оцту і майонезу.',
+      ingredients:[
+        {name:'Помідори',         brutto:120,netto:110,loss:8},
+        {name:'Огірок свіжий',    brutto:90, netto:80, loss:11},
+        {name:'Перець болгарський',brutto:80,netto:68, loss:15},
+        {name:'Цибуля червона',   brutto:55, netto:46, loss:16},
+        {name:'Оливки чорні б/к', brutto:50, netto:50, loss:0},
+        {name:'Сир фета',         brutto:60, netto:60, loss:0},
+        {name:'Олія оливкова',    brutto:20, netto:20, loss:0},
+        {name:'Орегано сухий',    brutto:2,  netto:2,  loss:0},
+        {name:'Сіль, перець',     brutto:3,  netto:3,  loss:0},
+      ],
+      tech:'Помідори нарізати часточками, огірок — кружальцями, перець — смужками. Цибулю нарізати тонкими кільцями, замочити в холодній воді 10 хв (прибирає гіркоту). Фету нарізати кубиками. Все викласти шарами, не перемішуючи. Збризнути олією, посипати орегано, сіллю, перцем. Подавати одразу.',
+    }
+  },
+  {
+    id:12, cat:'Салати', emoji:'🥕', name:'Морква по-корейськи', sub:'з кунжутом і часником', price:28,
+    techcard:{
+      yield:150, cal:140, b:2.4, f:7.8, c:16.2,
+      fact:'Гаряча олія, вилита на спеції, «розкриває» їх аромат — техніка з китайської кухні.',
+      ingredients:[
+        {name:'Морква',           brutto:200,netto:170,loss:15},
+        {name:'Часник',           brutto:12, netto:10, loss:17},
+        {name:'Олія рослинна',    brutto:25, netto:25, loss:0},
+        {name:'Оцет (9%)',        brutto:10, netto:10, loss:0},
+        {name:'Цукор',            brutto:8,  netto:8,  loss:0},
+        {name:'Коріандр мелений', brutto:3,  netto:3,  loss:0},
+        {name:'Паприка',          brutto:3,  netto:3,  loss:0},
+        {name:'Кунжут',           brutto:10, netto:10, loss:0},
+        {name:'Сіль, перець ч.',  brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Моркву натерти на тертці для корейської моркви. Посолити, перем\'яти, залишити 15 хв, злити сік. Додати цукор, оцет, часник, коріандр, паприку. Олію розігріти до диму, влити на приправи. Перемішати, додати кунжут. Маринувати 2 год у холодильнику.',
+    }
+  },
+  {
+    id:13, cat:'Салати', emoji:'🥜', name:'Салат з нуту', sub:'із запеченим перцем і кінзою', price:35,
+    techcard:{
+      yield:180, cal:198, b:9.4, f:8.6, c:24.2,
+      fact:'Нут тримає текстуру навіть через 4 год у заправці — ідеальний для їдальні, не розкисає.',
+      ingredients:[
+        {name:'Нут варений (консерв.)',brutto:150,netto:140,loss:7},
+        {name:'Перець болгарський',brutto:120,netto:102,loss:15},
+        {name:'Помідори черрі',   brutto:100,netto:92, loss:8},
+        {name:'Кінза',            brutto:20, netto:17, loss:15},
+        {name:'Часник',           brutto:6,  netto:5,  loss:17},
+        {name:'Олія оливкова',    brutto:20, netto:20, loss:0},
+        {name:'Лимонний сік',     brutto:15, netto:15, loss:0},
+        {name:'Зіра мелена',      brutto:2,  netto:2,  loss:0},
+        {name:'Сіль, перець',     brutto:3,  netto:3,  loss:0},
+      ],
+      tech:'Перець запекти цілим при 220°С 25 хв, покласти в пакет на 10 хв, очистити від шкірки, нарізати смужками. Нут промити. Черрі розрізати навпіл. Заправку збити з олії, лимонного соку, часнику, зіри, солі. Все змішати, заправити, посипати кінзою.',
+    }
+  },
+  {
+    id:14, cat:'Салати', emoji:'🫛', name:'Вінегрет класичний', sub:'з квашеною капустою', price:26,
+    techcard:{
+      yield:200, cal:118, b:2.8, f:4.6, c:17.4,
+      fact:'Буряк окремо заправляють олією до змішування — тоді він не фарбує всі інші овочі.',
+      ingredients:[
+        {name:'Буряк варений',    brutto:120,netto:100,loss:17},
+        {name:'Картопля варена',  brutto:130,netto:100,loss:23},
+        {name:'Морква варена',    brutto:75, netto:63, loss:16},
+        {name:'Огірок солоний',   brutto:90, netto:80, loss:11},
+        {name:'Капуста квашена',  brutto:80, netto:75, loss:6},
+        {name:'Цибуля зелена',    brutto:30, netto:25, loss:17},
+        {name:'Олія соняш.',      brutto:25, netto:25, loss:0},
+        {name:'Оцет (3%)',        brutto:5,  netto:5,  loss:0},
+        {name:'Цукор',            brutto:3,  netto:3,  loss:0},
+        {name:'Сіль, перець',     brutto:3,  netto:3,  loss:0},
+      ],
+      tech:'Всі варені овочі нарізати кубиком 8–10 мм. Буряк змішати з 1 ч.л. олії окремо. Квашену капусту злегка віджати. Змішати картоплю, моркву, огірок, капусту, цибулю. Заправити олією, оцтом, цукром, сіллю. Наприкінці обережно додати буряк.',
+    }
+  },
+  {
+    id:15, cat:'Салати', emoji:'🍖', name:'Салат «Мисливський»', sub:'з копченою ковбасою і квасолею', price:38,
+    techcard:{
+      yield:180, cal:234, b:14.6, f:14.2, c:13.4,
+      fact:'Квасоля у цьому салаті виступає як «зв\'язуючий» елемент — завдяки текстурі після часткового розтирання.',
+      ingredients:[
+        {name:'Ковбаса копчена',  brutto:100,netto:95, loss:5},
+        {name:'Квасоля консерв.', brutto:120,netto:110,loss:8},
+        {name:'Огірок солоний',   brutto:90, netto:80, loss:11},
+        {name:'Цибуля червона',   brutto:55, netto:46, loss:16},
+        {name:'Гірчиця зернова',  brutto:10, netto:10, loss:0},
+        {name:'Майонез',          brutto:30, netto:30, loss:0},
+        {name:'Зелень',           brutto:15, netto:12, loss:20},
+        {name:'Сіль, перець',     brutto:3,  netto:3,  loss:0},
+      ],
+      tech:'Ковбасу нарізати кубиком або смужками. Огірок нарізати кружальцями. Квасолю промити. Цибулю нарізати тонкими кільцями. Заправку збити з майонезу і гірчиці. Все змішати, заправити, посолити. Перед подачею посипати зеленню. Настояти 15 хв у холодильнику.',
+    }
+  },
+  {
+    id:16, cat:'Салати', emoji:'🥬', name:'Салат «Весняний»', sub:'з редискою, огірком і яйцем', price:24,
+    techcard:{
+      yield:180, cal:98, b:5.4, f:5.8, c:7.2,
+      fact:'Яйця, зварені «в мішечок» (6 хв), дають рідкий жовток, який стає частиною заправки.',
+      ingredients:[
+        {name:'Огірок свіжий',    brutto:120,netto:108,loss:10},
+        {name:'Редиска',          brutto:80, netto:68, loss:15},
+        {name:'Яйце варене',      brutto:80, netto:72, loss:10},
+        {name:'Цибуля зелена',    brutto:40, netto:33, loss:18},
+        {name:'Кріп',             brutto:15, netto:12, loss:20},
+        {name:'Сметана 15%',      brutto:40, netto:40, loss:0},
+        {name:'Сіль, перець',     brutto:3,  netto:3,  loss:0},
+      ],
+      tech:'Огірок нарізати кружальцями. Редиску нарізати тонкими кружальцями. Яйця нарізати часточками. Цибулю і кріп дрібно нарізати. Все змішати, заправити сметаною, посолити, поперчити. Подавати охолодженим.',
+    }
+  },
+
+  // ── ГАРНІРИ ──
+  {
+    id:17, cat:'Гарніри', emoji:'🥔', name:'Пюре картопляне', sub:'на вершковому маслі та молоці', price:22,
+    techcard:{
+      yield:200, cal:148, b:3.2, f:5.8, c:21.4,
+      fact:'Масло і молоко додають підігрітими — холодні інгредієнти роблять пюре клейким.',
+      ingredients:[
+        {name:'Картопля',         brutto:280,netto:215,loss:23},
+        {name:'Масло вершкове',   brutto:20, netto:20, loss:0},
+        {name:'Молоко гаряче',    brutto:60, netto:60, loss:0},
+        {name:'Сіль',             brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Картоплю очистити, нарізати однаковими шматками. Відварити в підсоленій воді 20–25 хв. Воду злити повністю, підсушити на вогні 1 хв. Розім\'яти товкачем. Додати гаряче молоко і масло порціями. Не використовувати блендер — пюре стане клейким.',
+    }
+  },
+  {
+    id:18, cat:'Гарніри', emoji:'🌾', name:'Гречка з грибами', sub:'смажена по-купецьки', price:24,
+    techcard:{
+      yield:200, cal:168, b:7.4, f:5.6, c:26.8,
+      fact:'«Купецький» метод — гречку спочатку обсмажують суху на сковороді, потім варять: горіховий аромат посилюється багаторазово.',
+      ingredients:[
+        {name:'Гречка ядриця',    brutto:100,netto:100,loss:0},
+        {name:'Гриби печериці',   brutto:120,netto:108,loss:10},
+        {name:'Цибуля',           brutto:80, netto:67, loss:16},
+        {name:'Масло вершкове',   brutto:15, netto:15, loss:0},
+        {name:'Олія',             brutto:10, netto:10, loss:0},
+        {name:'Вода',             brutto:200,netto:200,loss:0},
+        {name:'Сіль, перець',     brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Гречку перебрати, обсмажити на сухій сковороді 3–4 хв до аромату. Залити гарячою водою 1:2, посолити, варити під кришкою 15–17 хв. Гриби нарізати скибочками, смажити до золота. Цибулю пасерувати з вершковим маслом. Змішати гречку, гриби і цибулю.',
+    }
+  },
+  {
+    id:19, cat:'Гарніри', emoji:'🍚', name:'Рис з овочами', sub:'на пасерованих спеціях', price:22,
+    techcard:{
+      yield:200, cal:162, b:3.8, f:5.2, c:26.4,
+      fact:'Рис закладають у вже засмажені спеції — принцип плову, що дає кожному зерну смак.',
+      ingredients:[
+        {name:'Рис довгозерний',  brutto:100,netto:100,loss:0},
+        {name:'Морква',           brutto:80, netto:68, loss:15},
+        {name:'Болгарський перець',brutto:70,netto:60, loss:14},
+        {name:'Цибуля',           brutto:70, netto:58, loss:17},
+        {name:'Часник',           brutto:6,  netto:5,  loss:17},
+        {name:'Олія',             brutto:15, netto:15, loss:0},
+        {name:'Куркума',          brutto:2,  netto:2,  loss:0},
+        {name:'Вода/бульйон',     brutto:200,netto:200,loss:0},
+        {name:'Сіль, перець',     brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Рис промити до прозорої води. Обсмажити цибулю до золота, додати моркву, перець, куркуму, часник, смажити 3 хв. Додати рис, перемішати зі спеціями 1 хв. Залити гарячою водою 1:2. Варити на малому вогні під кришкою 18 хв, не відкриваючи.',
+    }
+  },
+  {
+    id:20, cat:'Гарніри', emoji:'🫘', name:'Квасоля тушкована', sub:'з томатами і розмарином', price:20,
+    techcard:{
+      yield:200, cal:152, b:8.6, f:4.8, c:20.4,
+      fact:'Розмарин і квасоля — класичне тосканське поєднання: ефірні олії трави проникають у бобові за 20 хв тушкування.',
+      ingredients:[
+        {name:'Квасоля біла (консерв.)',brutto:180,netto:165,loss:8},
+        {name:'Томати у вл. соку',brutto:150,netto:150,loss:0},
+        {name:'Цибуля',           brutto:80, netto:67, loss:16},
+        {name:'Часник',           brutto:8,  netto:6,  loss:25},
+        {name:'Розмарин свіжий',  brutto:5,  netto:5,  loss:0},
+        {name:'Олія оливкова',    brutto:15, netto:15, loss:0},
+        {name:'Цукор',            brutto:5,  netto:5,  loss:0},
+        {name:'Сіль, перець',     brutto:4,  netto:4,  loss:0},
+      ],
+      tech:'Цибулю пасерувати на оливковій олії 5 хв. Додати часник, розмарин, смажити ще 1 хв. Томати подрібнити, додати, тушкувати 10 хв. Додати квасолю, цукор, сіль, перець. Тушкувати під кришкою 15–20 хв.',
+    }
+  },
+  {
+    id:21, cat:'Гарніри', emoji:'🌽', name:'Кукурудзяна каша', sub:'з сиром і зеленню (полента)', price:18,
+    techcard:{
+      yield:200, cal:188, b:6.2, f:7.4, c:26.8,
+      fact:'Полента відома з XVI ст. як страва північних італійців — в Україні мамалига має таку ж давню традицію.',
+      ingredients:[
+        {name:'Крупа кукурудзяна',brutto:100,netto:100,loss:0},
+        {name:'Вода',             brutto:400,netto:400,loss:0},
+        {name:'Масло вершкове',   brutto:20, netto:20, loss:0},
+        {name:'Сир твердий тертий',brutto:30,netto:28, loss:7},
+        {name:'Кріп і петрушка', brutto:15, netto:12, loss:20},
+        {name:'Сіль',             brutto:5,  netto:5,  loss:0},
+      ],
+      tech:'Воду довести до кипіння, посолити. Крупу всипати тонким струменем, помішуючи. Варити на малому вогні 25–30 хв до відставання від стінок. Додати вершкове масло, перемішати. Зняти з вогню, додати тертий сир і зелень. Подавати одразу.',
+    }
+  },
+
+  // ── НАПОЇ ──
+  {
+    id:22, cat:'Напої', emoji:'🍵', name:'Чай з чебрецем', sub:'та лимоном', price:12,
+    techcard:{ yield:200, cal:8, b:0.1, f:0, c:1.8, fact:'Чебрець — природний антисептик, особливо корисний у холодну пору.',
+      ingredients:[{name:'Чай чорний',brutto:4,netto:4,loss:0},{name:'Чебрець сухий',brutto:2,netto:2,loss:0},{name:'Лимон',brutto:20,netto:15,loss:25},{name:'Вода',brutto:200,netto:200,loss:0}],
+      tech:'Заварити чай і чебрець окропом, настояти 4 хв. Процідити. Подавати з часточкою лимону.' }
+  },
+  {
+    id:23, cat:'Напої', emoji:'🍎', name:'Компот яблучний', sub:'з корицею', price:14,
+    techcard:{ yield:250, cal:65, b:0.3, f:0.1, c:16.2, fact:'Кориця додається після вимкнення вогню — при кипінні аромат розпадається.',
+      ingredients:[{name:'Яблука свіжі',brutto:80,netto:68,loss:15},{name:'Цукор',brutto:25,netto:25,loss:0},{name:'Кориця (паличка)',brutto:2,netto:2,loss:0},{name:'Вода',brutto:250,netto:250,loss:0}],
+      tech:'Яблука нарізати часточками, видалити серцевину. Закип\'ятити воду з цукром, додати яблука, варити 10 хв. Зняти з вогню, додати паличку кориці. Настояти 20 хв.' }
+  },
+
+  // ── ХЛІБ ──
+  {
+    id:24, cat:'Хліб', emoji:'🍞', name:'Хліб житньо-пшеничний', sub:'2 скибки (100 г)', price:8,
+    techcard:{ yield:100, cal:218, b:6.8, f:1.4, c:44.2, fact:'Жито знижує глікемічний індекс — рівень цукру в крові зростає повільніше, ніж від білого хліба.',
+      ingredients:[{name:'Хліб житньо-пшен.',brutto:105,netto:100,loss:5}],
+      tech:'Нарізати скибками завтовшки 15 мм безпосередньо перед подачею.' }
+  },
 ];
 
 let cart   = {};       // {itemId: qty}
@@ -449,14 +933,17 @@ function renderMenu() {
           <div class="card-sub">${item.sub}</div>
           <div class="card-footer">
             <div class="card-price">${item.price} грн</div>
-            ${qty > 0
-              ? `<div class="card-qty">
-                   <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
-                   <span class="qty-val">${qty}</span>
-                   <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
-                 </div>`
-              : `<button class="add-btn" onclick="changeQty(${item.id},1)">+ Додати</button>`
-            }
+            <div style="display:flex;gap:5px;align-items:center">
+              ${item.techcard ? `<button class="tc-btn" onclick="event.stopPropagation();openTC(${item.id})">ТК</button>` : ''}
+              ${qty > 0
+                ? `<div class="card-qty">
+                     <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+                     <span class="qty-val">${qty}</span>
+                     <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+                   </div>`
+                : `<button class="add-btn" onclick="changeQty(${item.id},1)">+ Додати</button>`
+              }
+            </div>
           </div>
         </div>
       </div>`;
@@ -727,6 +1214,54 @@ function renderStats() {
       <div class="ri-amount">${o.total} грн</div>
     </div>`).join('')}
   ` : ''}`;
+}
+
+
+// ══ TECH CARD MODAL ═══════════════════════════════════════
+function openTC(id) {
+  const item = MENU.find(i => i.id === id);
+  if (!item || !item.techcard) return;
+  const tc = item.techcard;
+  document.getElementById('tcTitle').textContent = item.emoji + ' ' + item.name;
+  document.getElementById('tcSub').textContent = item.sub;
+
+  // calc totals
+  const totB = tc.ingredients.reduce((s,i)=>s+i.brutto,0);
+  const totN = tc.ingredients.reduce((s,i)=>s+i.netto,0);
+
+  let rows = tc.ingredients.map(ing => `
+    <tr>
+      <td>${ing.name}</td>
+      <td>${ing.brutto}</td>
+      <td>${ing.netto}</td>
+      <td>${ing.loss}%</td>
+    </tr>`).join('');
+
+  document.getElementById('tcBody').innerHTML = `
+    <div class="tc-fact">${tc.fact}</div>
+    <div class="tc-meta">
+      <div class="tc-meta-item"><div class="tc-meta-val">${tc.yield}</div><div class="tc-meta-lbl">вихід, г</div></div>
+      <div class="tc-meta-item"><div class="tc-meta-val">${tc.cal}</div><div class="tc-meta-lbl">ккал</div></div>
+      <div class="tc-meta-item"><div class="tc-meta-val">${tc.b}</div><div class="tc-meta-lbl">білки, г</div></div>
+      <div class="tc-meta-item"><div class="tc-meta-val">${tc.f}/${tc.c}</div><div class="tc-meta-lbl">жири/вугл.</div></div>
+    </div>
+    <div class="tc-section">Інгредієнти на 1 порцію</div>
+    <table class="tc-table">
+      <thead><tr><th>Найменування</th><th>Брутто г</th><th>Нетто г</th><th>Втрати</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>Разом</td><td>${totB}</td><td>${totN}</td><td>—</td></tr></tfoot>
+    </table>
+    <div class="tc-section">Технологія приготування</div>
+    <div class="tc-tech">${tc.tech}</div>
+  `;
+  document.getElementById('tcModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTCModal(e) {
+  if (e && e.target !== document.getElementById('tcModal')) return;
+  document.getElementById('tcModal').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ══ TABS & MODE ═══════════════════════════════════════════
