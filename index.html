@@ -476,7 +476,7 @@ const MENU = [
   {
     id:1, cat:'Перші страви', emoji:'🍲', name:'Борщ київський', sub:'з чорносливом та квасолею', price:38,
     techcard:{
-      yield:500, cal:185, b:6.2, f:7.8, c:24.1,
+      portion:500, cal:185, b:6.2, f:7.8, c:24.1,
       fact:'Чорнослив додає легку кислинку і робить борщ насиченішим без оцту.',
       ingredients:[
         {name:'Буряк',            brutto:120,netto:100,loss:17},
@@ -498,7 +498,7 @@ const MENU = [
   {
     id:2, cat:'Перші страви', emoji:'🥣', name:'Суп-пюре з сочевиці', sub:'з копченою паприкою', price:34,
     techcard:{
-      yield:400, cal:210, b:14.5, f:5.2, c:28.3,
+      portion:400, cal:210, b:14.5, f:5.2, c:28.3,
       fact:'Червона сочевиця не потребує замочування і вариться 20 хв — ідеальна для їдальні.',
       ingredients:[
         {name:'Сочевиця червона', brutto:120,netto:120,loss:0},
@@ -518,7 +518,7 @@ const MENU = [
   {
     id:3, cat:'Перші страви', emoji:'🍜', name:'Юшка курина', sub:'з домашньою локшиною', price:36,
     techcard:{
-      yield:500, cal:165, b:11.8, f:5.9, c:17.2,
+      portion:500, cal:165, b:11.8, f:5.9, c:17.2,
       fact:'Домашня яєчна локшина надає бульйону насиченість, якої немає у пакетної.',
       ingredients:[
         {name:'Курка (частини)',   brutto:200,netto:160,loss:20},
@@ -536,7 +536,7 @@ const MENU = [
   {
     id:4, cat:'Перші страви', emoji:'🫕', name:'Розсольник по-московськи', sub:'з перловкою та солоними огірками', price:32,
     techcard:{
-      yield:500, cal:175, b:7.4, f:6.8, c:22.5,
+      portion:500, cal:175, b:7.4, f:6.8, c:22.5,
       fact:'Перлова крупа, замочена з вечора, дає кремовий навар — суп виходить густим без загущувачів.',
       ingredients:[
         {name:'Яловичина (кістки)',brutto:200,netto:170,loss:15},
@@ -555,11 +555,11 @@ const MENU = [
     }
   },
 
-  // ── М'ЯСО ТА РИБА ──
+  // == МЯСО ТА РИБА ==
   {
     id:5, cat:'М\'ясо та риба', emoji:'🥩', name:'Яловичина тушкована', sub:'з чорносливом і цибулею', price:72,
     techcard:{
-      yield:120, cal:218, b:22.4, f:11.2, c:8.6,
+      portion:120, cal:218, b:22.4, f:11.2, c:8.6,
       fact:'Чорнослив при тушкуванні карамелізується і замінює цукор — соус стає насиченим без підсолоджувачів.',
       ingredients:[
         {name:'Яловичина (лопатка)',brutto:180,netto:150,loss:17},
@@ -579,7 +579,7 @@ const MENU = [
   {
     id:6, cat:'М\'ясо та риба', emoji:'🍗', name:'Котлета по-домашньому', sub:'з начинкою із зелені та масла', price:58,
     techcard:{
-      yield:130, cal:245, b:19.8, f:15.6, c:8.4,
+      portion:130, cal:245, b:19.8, f:15.6, c:8.4,
       fact:'Замість панірувальних сухарів — крихта білого хліба: тримає форму і залишається ніжнішою.',
       ingredients:[
         {name:'Свинина+яловичина (фарш)',brutto:160,netto:150,loss:6},
@@ -600,7 +600,7 @@ const MENU = [
   {
     id:7, cat:'М\'ясо та риба', emoji:'🐟', name:'Минтай запечений', sub:'у гірчично-медовій глазурі', price:55,
     techcard:{
-      yield:130, cal:158, b:24.6, f:5.8, c:4.2,
+      portion:130, cal:158, b:24.6, f:5.8, c:4.2,
       fact:'Гірчично-медова глазур карамелізується при 200°С і маскує специфічний запах минтаю.',
       ingredients:[
         {name:'Минтай (філе)',    brutto:180,netto:150,loss:17},
@@ -618,7 +618,7 @@ const MENU = [
   {
     id:8, cat:'М\'ясо та риба', emoji:'🍳', name:'Печінка куряча', sub:'з карамельною цибулею і яблуком', price:48,
     techcard:{
-      yield:130, cal:192, b:21.5, f:9.4, c:9.8,
+      portion:130, cal:192, b:21.5, f:9.4, c:9.8,
       fact:'Яблуко нейтралізує гіркоту печінки — старий французький прийом, що перетворює субпродукт у делікатес.',
       ingredients:[
         {name:'Печінка куряча',   brutto:180,netto:155,loss:14},
@@ -638,7 +638,7 @@ const MENU = [
   {
     id:9, cat:'М\'ясо та риба', emoji:'🫙', name:'Тефтелі парові', sub:'з індичого фаршу в томатному соусі', price:54,
     techcard:{
-      yield:150, cal:196, b:20.2, f:8.5, c:10.6,
+      portion:150, cal:196, b:20.2, f:8.5, c:10.6,
       fact:'Індичий фарш з пшоном замість рису — кульки не розвалюються і мають ніжнішу текстуру.',
       ingredients:[
         {name:'Фарш з індички',  brutto:170,netto:160,loss:6},
@@ -658,7 +658,7 @@ const MENU = [
   {
     id:10, cat:'М\'ясо та риба', emoji:'🥘', name:'Гуляш яловичий', sub:'з паприкою по-угорськи', price:68,
     techcard:{
-      yield:130, cal:228, b:21.8, f:12.4, c:7.2,
+      portion:130, cal:228, b:21.8, f:12.4, c:7.2,
       fact:'Секрет угорського гуляшу — паприка додається двічі: на початку у жир і наприкінці свіжа, що дає багатошаровий аромат.',
       ingredients:[
         {name:'Яловичина (лопатка)',brutto:190,netto:158,loss:17},
@@ -681,7 +681,7 @@ const MENU = [
   {
     id:11, cat:'Салати', emoji:'🥗', name:'Грецький салат', sub:'з оливками і фетою', price:42,
     techcard:{
-      yield:200, cal:182, b:5.8, f:14.2, c:9.6,
+      portion:200, cal:182, b:5.8, f:14.2, c:9.6,
       fact:'Оливкова олія першого холодного віджиму і орегано — єдина заправка, без оцту і майонезу.',
       ingredients:[
         {name:'Помідори',         brutto:120,netto:110,loss:8},
@@ -700,7 +700,7 @@ const MENU = [
   {
     id:12, cat:'Салати', emoji:'🥕', name:'Морква по-корейськи', sub:'з кунжутом і часником', price:28,
     techcard:{
-      yield:150, cal:140, b:2.4, f:7.8, c:16.2,
+      portion:150, cal:140, b:2.4, f:7.8, c:16.2,
       fact:'Гаряча олія, вилита на спеції, «розкриває» їх аромат — техніка з китайської кухні.',
       ingredients:[
         {name:'Морква',           brutto:200,netto:170,loss:15},
@@ -719,7 +719,7 @@ const MENU = [
   {
     id:13, cat:'Салати', emoji:'🥜', name:'Салат з нуту', sub:'із запеченим перцем і кінзою', price:35,
     techcard:{
-      yield:180, cal:198, b:9.4, f:8.6, c:24.2,
+      portion:180, cal:198, b:9.4, f:8.6, c:24.2,
       fact:'Нут тримає текстуру навіть через 4 год у заправці — ідеальний для їдальні, не розкисає.',
       ingredients:[
         {name:'Нут варений (консерв.)',brutto:150,netto:140,loss:7},
@@ -738,7 +738,7 @@ const MENU = [
   {
     id:14, cat:'Салати', emoji:'🫛', name:'Вінегрет класичний', sub:'з квашеною капустою', price:26,
     techcard:{
-      yield:200, cal:118, b:2.8, f:4.6, c:17.4,
+      portion:200, cal:118, b:2.8, f:4.6, c:17.4,
       fact:'Буряк окремо заправляють олією до змішування — тоді він не фарбує всі інші овочі.',
       ingredients:[
         {name:'Буряк варений',    brutto:120,netto:100,loss:17},
@@ -758,7 +758,7 @@ const MENU = [
   {
     id:15, cat:'Салати', emoji:'🍖', name:'Салат «Мисливський»', sub:'з копченою ковбасою і квасолею', price:38,
     techcard:{
-      yield:180, cal:234, b:14.6, f:14.2, c:13.4,
+      portion:180, cal:234, b:14.6, f:14.2, c:13.4,
       fact:'Квасоля у цьому салаті виступає як «зв\'язуючий» елемент — завдяки текстурі після часткового розтирання.',
       ingredients:[
         {name:'Ковбаса копчена',  brutto:100,netto:95, loss:5},
@@ -776,7 +776,7 @@ const MENU = [
   {
     id:16, cat:'Салати', emoji:'🥬', name:'Салат «Весняний»', sub:'з редискою, огірком і яйцем', price:24,
     techcard:{
-      yield:180, cal:98, b:5.4, f:5.8, c:7.2,
+      portion:180, cal:98, b:5.4, f:5.8, c:7.2,
       fact:'Яйця, зварені «в мішечок» (6 хв), дають рідкий жовток, який стає частиною заправки.',
       ingredients:[
         {name:'Огірок свіжий',    brutto:120,netto:108,loss:10},
@@ -795,7 +795,7 @@ const MENU = [
   {
     id:17, cat:'Гарніри', emoji:'🥔', name:'Пюре картопляне', sub:'на вершковому маслі та молоці', price:22,
     techcard:{
-      yield:200, cal:148, b:3.2, f:5.8, c:21.4,
+      portion:200, cal:148, b:3.2, f:5.8, c:21.4,
       fact:'Масло і молоко додають підігрітими — холодні інгредієнти роблять пюре клейким.',
       ingredients:[
         {name:'Картопля',         brutto:280,netto:215,loss:23},
@@ -809,7 +809,7 @@ const MENU = [
   {
     id:18, cat:'Гарніри', emoji:'🌾', name:'Гречка з грибами', sub:'смажена по-купецьки', price:24,
     techcard:{
-      yield:200, cal:168, b:7.4, f:5.6, c:26.8,
+      portion:200, cal:168, b:7.4, f:5.6, c:26.8,
       fact:'«Купецький» метод — гречку спочатку обсмажують суху на сковороді, потім варять: горіховий аромат посилюється багаторазово.',
       ingredients:[
         {name:'Гречка ядриця',    brutto:100,netto:100,loss:0},
@@ -826,7 +826,7 @@ const MENU = [
   {
     id:19, cat:'Гарніри', emoji:'🍚', name:'Рис з овочами', sub:'на пасерованих спеціях', price:22,
     techcard:{
-      yield:200, cal:162, b:3.8, f:5.2, c:26.4,
+      portion:200, cal:162, b:3.8, f:5.2, c:26.4,
       fact:'Рис закладають у вже засмажені спеції — принцип плову, що дає кожному зерну смак.',
       ingredients:[
         {name:'Рис довгозерний',  brutto:100,netto:100,loss:0},
@@ -845,7 +845,7 @@ const MENU = [
   {
     id:20, cat:'Гарніри', emoji:'🫘', name:'Квасоля тушкована', sub:'з томатами і розмарином', price:20,
     techcard:{
-      yield:200, cal:152, b:8.6, f:4.8, c:20.4,
+      portion:200, cal:152, b:8.6, f:4.8, c:20.4,
       fact:'Розмарин і квасоля — класичне тосканське поєднання: ефірні олії трави проникають у бобові за 20 хв тушкування.',
       ingredients:[
         {name:'Квасоля біла (консерв.)',brutto:180,netto:165,loss:8},
@@ -863,7 +863,7 @@ const MENU = [
   {
     id:21, cat:'Гарніри', emoji:'🌽', name:'Кукурудзяна каша', sub:'з сиром і зеленню (полента)', price:18,
     techcard:{
-      yield:200, cal:188, b:6.2, f:7.4, c:26.8,
+      portion:200, cal:188, b:6.2, f:7.4, c:26.8,
       fact:'Полента відома з XVI ст. як страва північних італійців — в Україні мамалига має таку ж давню традицію.',
       ingredients:[
         {name:'Крупа кукурудзяна',brutto:100,netto:100,loss:0},
@@ -880,13 +880,13 @@ const MENU = [
   // ── НАПОЇ ──
   {
     id:22, cat:'Напої', emoji:'🍵', name:'Чай з чебрецем', sub:'та лимоном', price:12,
-    techcard:{ yield:200, cal:8, b:0.1, f:0, c:1.8, fact:'Чебрець — природний антисептик, особливо корисний у холодну пору.',
+    techcard:{ portion:200, cal:8, b:0.1, f:0, c:1.8, fact:'Чебрець — природний антисептик, особливо корисний у холодну пору.',
       ingredients:[{name:'Чай чорний',brutto:4,netto:4,loss:0},{name:'Чебрець сухий',brutto:2,netto:2,loss:0},{name:'Лимон',brutto:20,netto:15,loss:25},{name:'Вода',brutto:200,netto:200,loss:0}],
       tech:'Заварити чай і чебрець окропом, настояти 4 хв. Процідити. Подавати з часточкою лимону.' }
   },
   {
     id:23, cat:'Напої', emoji:'🍎', name:'Компот яблучний', sub:'з корицею', price:14,
-    techcard:{ yield:250, cal:65, b:0.3, f:0.1, c:16.2, fact:'Кориця додається після вимкнення вогню — при кипінні аромат розпадається.',
+    techcard:{ portion:250, cal:65, b:0.3, f:0.1, c:16.2, fact:'Кориця додається після вимкнення вогню — при кипінні аромат розпадається.',
       ingredients:[{name:'Яблука свіжі',brutto:80,netto:68,loss:15},{name:'Цукор',brutto:25,netto:25,loss:0},{name:'Кориця (паличка)',brutto:2,netto:2,loss:0},{name:'Вода',brutto:250,netto:250,loss:0}],
       tech:'Яблука нарізати часточками, видалити серцевину. Закип\'ятити воду з цукром, додати яблука, варити 10 хв. Зняти з вогню, додати паличку кориці. Настояти 20 хв.' }
   },
@@ -894,7 +894,7 @@ const MENU = [
   // ── ХЛІБ ──
   {
     id:24, cat:'Хліб', emoji:'🍞', name:'Хліб житньо-пшеничний', sub:'2 скибки (100 г)', price:8,
-    techcard:{ yield:100, cal:218, b:6.8, f:1.4, c:44.2, fact:'Жито знижує глікемічний індекс — рівень цукру в крові зростає повільніше, ніж від білого хліба.',
+    techcard:{ portion:100, cal:218, b:6.8, f:1.4, c:44.2, fact:'Жито знижує глікемічний індекс — рівень цукру в крові зростає повільніше, ніж від білого хліба.',
       ingredients:[{name:'Хліб житньо-пшен.',brutto:105,netto:100,loss:5}],
       tech:'Нарізати скибками завтовшки 15 мм безпосередньо перед подачею.' }
   },
@@ -1002,7 +1002,7 @@ function renderCart() {
     <div class="summary-row total"><span>До сплати</span><span>${totalPrice} грн</span></div>
   </div>
   <div class="customer-field">
-    <label>Ім'я замовника</label>
+    <label>Імʼя замовника</label>
     <input type="text" id="custName" placeholder="Іванов Іван" maxlength="50">
   </div>
   <div class="customer-field">
@@ -1030,7 +1030,7 @@ function renderCart() {
 function submitOrder() {
   const name  = document.getElementById('custName')?.value.trim();
   const cls   = document.getElementById('custClass')?.value;
-  if (!name) { showToast('⚠️ Введіть ім'я замовника'); return; }
+  if (!name) { showToast('⚠️ Введіть імʼя замовника'); return; }
   if (!cls)  { showToast('⚠️ Оберіть клас/відділення'); return; }
 
   const items = Object.entries(cart).map(([id, qty]) => {
@@ -1236,7 +1236,7 @@ function openTC(id) {
   document.getElementById('tcBody').innerHTML = `
     <div class="tc-fact">${tc.fact}</div>
     <div class="tc-meta">
-      <div class="tc-meta-item"><div class="tc-meta-val">${tc.yield}</div><div class="tc-meta-lbl">вихід, г</div></div>
+      <div class="tc-meta-item"><div class="tc-meta-val">${tc.portion}</div><div class="tc-meta-lbl">вихід, г</div></div>
       <div class="tc-meta-item"><div class="tc-meta-val">${tc.cal}</div><div class="tc-meta-lbl">ккал</div></div>
       <div class="tc-meta-item"><div class="tc-meta-val">${tc.b}</div><div class="tc-meta-lbl">білки, г</div></div>
       <div class="tc-meta-item"><div class="tc-meta-val">${tc.f}/${tc.c}</div><div class="tc-meta-lbl">жири/вугл.</div></div>
