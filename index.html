@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1B4332">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Їдальня">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Їдальня — Замовлення</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-deep:  #1B4332;
+    --green-mid:   #2D6A4F;
+    --green-light: #40916C;
+    --cream:       #F8F5F0;
+    --cream-dark:  #EDE8E0;
+    --orange:      #E07B39;
+    --orange-light:#F4A261;
+    --text-dark:   #1A1A1A;
+    --text-mid:    #4A4A4A;
+    --text-soft:   #7A7A7A;
+    --white:       #FFFFFF;
+    --red:         #C0392B;
+    --blue:        #2980B9;
+    --radius:      14px;
+    --shadow:      0 2px 16px rgba(0,0,0,0.10);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    color: var(--text-dark);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LAYOUT ── */
+  #app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--green-deep);
+    color: var(--white);
+    padding: 14px 20px 10px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar-icon { font-size: 24px; }
+  .topbar h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+  .topbar-sub { font-size: 11px; opacity: 0.65; margin-top: 1px; }
+  .mode-toggle {
+    display: flex; gap: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 4px;
+  }
+  .mode-btn {
+    border: none; background: transparent; color: rgba(255,255,255,0.65);
+    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+    padding: 5px 12px; border-radius: 7px; cursor: pointer; transition: all 0.18s;
+  }
+  .mode-btn.active { background: var(--white); color: var(--green-deep); }
+
+  /* ── TAB NAV ── */
+  .tab-nav {
+    display: flex;
+    background: var(--green-deep);
+    border-bottom: 2px solid var(--green-mid);
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    flex: 1; border: none; background: transparent;
+    color: rgba(255,255,255,0.55); font-family: 'Nunito', sans-serif;
+    font-size: 13px; font-weight: 700; padding: 10px 8px;
+    cursor: pointer; transition: all 0.18s; position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .tab-btn .tab-icon { font-size: 18px; }
+  .tab-btn.active { color: var(--white); }
+  .tab-btn.active::after {
+    content: ''; position: absolute; bottom: -2px; left: 20%; right: 20%;
+    height: 3px; background: var(--orange); border-radius: 3px 3px 0 0;
+  }
+  .badge {
+    position: absolute; top: 6px; right: 22%;
+    background: var(--orange); color: white;
+    font-size: 10px; font-weight: 800; min-width: 17px; height: 17px;
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    padding: 0 4px; line-height: 1;
+  }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  .panel { display: none; padding: 16px; }
+  .panel.active { display: block; }
+
+  /* ── MENU SECTION ── */
+  .section-label {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--text-soft); margin: 12px 0 8px; padding-left: 2px;
+  }
+
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+
+  .menu-card {
+    background: var(--white); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden; cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s; position: relative;
+  }
+  .menu-card:active { transform: scale(0.97); }
+  .menu-card.in-cart { outline: 2.5px solid var(--orange); }
+  .card-emoji { font-size: 36px; text-align: center; padding: 14px 8px 6px; }
+  .card-body { padding: 0 10px 12px; }
+  .card-name { font-size: 13px; font-weight: 700; color: var(--text-dark); line-height: 1.2; }
+  .card-sub { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .card-price { font-size: 14px; font-weight: 800; color: var(--green-deep); }
+  .card-qty {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--cream); border-radius: 20px; padding: 3px 8px;
+  }
+  .qty-btn {
+    border: none; background: none; font-size: 16px; font-weight: 700;
+    cursor: pointer; color: var(--green-deep); line-height: 1;
+    width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+  }
+  .qty-val { font-size: 13px; font-weight: 800; min-width: 16px; text-align: center; }
+  .add-btn {
+    border: none; background: var(--orange); color: white;
+    border-radius: 20px; padding: 4px 12px; font-family: 'Nunito', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+  }
+  .add-btn:hover { background: var(--orange-light); }
+
+  /* ── CART / ORDER PANEL ── */
+  .cart-empty { text-align: center; padding: 48px 20px; color: var(--text-soft); }
+  .cart-empty .big { font-size: 48px; margin-bottom: 12px; }
+  .cart-empty p { font-size: 15px; }
+
+  .cart-item {
+    background: var(--white); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+  }
+  .ci-emoji { font-size: 28px; flex-shrink: 0; }
+  .ci-info { flex: 1; }
+  .ci-name { font-size: 14px; font-weight: 700; }
+  .ci-price { font-size: 12px; color: var(--text-soft); }
+  .ci-controls { display: flex; align-items: center; gap: 8px; }
+  .ci-qty {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--cream); border-radius: 20px; padding: 4px 10px;
+  }
+  .ci-qty-val { font-size: 14px; font-weight: 800; min-width: 18px; text-align: center; }
+  .ci-del { border: none; background: none; font-size: 18px; cursor: pointer; opacity: 0.4; }
+
+  .order-summary {
+    background: var(--green-deep); color: var(--white);
+    border-radius: var(--radius); padding: 16px; margin: 16px 0;
+  }
+  .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+  .summary-row.total { font-size: 17px; font-weight: 800; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.15); }
+
+  .customer-field {
+    background: var(--white); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow);
+  }
+  .customer-field label { font-size: 12px; font-weight: 700; color: var(--text-soft); display: block; margin-bottom: 6px; }
+  .customer-field input, .customer-field select {
+    width: 100%; border: 1.5px solid var(--cream-dark); border-radius: 8px;
+    padding: 10px 12px; font-family: 'Nunito', sans-serif; font-size: 14px;
+    outline: none; transition: border 0.15s;
+  }
+  .customer-field input:focus, .customer-field select:focus { border-color: var(--green-light); }
+
+  .submit-btn {
+    width: 100%; background: var(--orange); color: white; border: none;
+    border-radius: var(--radius); padding: 15px; font-family: 'Nunito', sans-serif;
+    font-size: 16px; font-weight: 800; cursor: pointer; margin-bottom: 32px;
+    transition: background 0.15s; letter-spacing: 0.2px;
+  }
+  .submit-btn:hover { background: var(--orange-light); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── ORDERS PANEL (KITCHEN VIEW) ── */
+  .orders-filter {
+    display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px;
+  }
+  .filter-chip {
+    flex-shrink: 0; border: 2px solid var(--cream-dark); background: var(--white);
+    border-radius: 20px; padding: 6px 14px; font-family: 'Nunito', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text-mid);
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .filter-chip.active { background: var(--green-deep); border-color: var(--green-deep); color: white; }
+
+  .order-card {
+    background: var(--white); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 14px; margin-bottom: 12px;
+    border-left: 4px solid var(--cream-dark); transition: border-color 0.2s;
+  }
+  .order-card.status-new       { border-left-color: var(--orange); }
+  .order-card.status-preparing { border-left-color: var(--blue); }
+  .order-card.status-ready     { border-left-color: var(--green-light); }
+  .order-card.status-done      { border-left-color: var(--cream-dark); opacity: 0.6; }
+
+  .order-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+  .order-num { font-size: 16px; font-weight: 800; color: var(--green-deep); }
+  .order-time { font-size: 11px; color: var(--text-soft); }
+  .order-customer { font-size: 13px; color: var(--text-mid); margin-bottom: 6px; }
+
+  .status-badge {
+    font-size: 11px; font-weight: 800; border-radius: 6px; padding: 3px 9px;
+    display: inline-block; margin-bottom: 8px;
+  }
+  .status-badge.new        { background: #FEF3C7; color: #92400E; }
+  .status-badge.preparing  { background: #DBEAFE; color: #1E40AF; }
+  .status-badge.ready      { background: #D1FAE5; color: #065F46; }
+  .status-badge.done       { background: #F3F4F6; color: #6B7280; }
+
+  .order-items-list { margin: 6px 0 10px; }
+  .oi { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; border-bottom: 1px solid var(--cream); }
+  .oi:last-child { border-bottom: none; }
+  .oi-name { color: var(--text-dark); }
+  .oi-qty  { color: var(--text-soft); font-weight: 700; }
+
+  .order-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .action-btn {
+    flex: 1; min-width: 80px; border: none; border-radius: 9px; padding: 8px 10px;
+    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .btn-prepare { background: #DBEAFE; color: #1E40AF; }
+  .btn-ready   { background: #D1FAE5; color: #065F46; }
+  .btn-done    { background: #F3F4F6; color: #6B7280; }
+  .btn-cancel  { background: #FEE2E2; color: #991B1B; }
+  .action-btn:hover { filter: brightness(0.93); }
+
+  .order-total-line { font-size: 13px; font-weight: 700; color: var(--text-mid); margin-bottom: 8px; }
+
+  /* ── STATS PANEL ── */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card {
+    background: var(--white); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px; text-align: center;
+  }
+  .stat-icon { font-size: 28px; margin-bottom: 6px; }
+  .stat-val { font-size: 26px; font-weight: 800; color: var(--green-deep); }
+  .stat-label { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
+  .stat-card.highlight { background: var(--green-deep); color: white; }
+  .stat-card.highlight .stat-val { color: var(--orange-light); }
+  .stat-card.highlight .stat-label { color: rgba(255,255,255,0.65); }
+
+  .recent-title { font-size: 14px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px; }
+  .recent-item {
+    background: var(--white); border-radius: 10px; padding: 10px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  .ri-left .ri-name { font-size: 13px; font-weight: 700; }
+  .ri-left .ri-cust { font-size: 11px; color: var(--text-soft); }
+  .ri-amount { font-size: 14px; font-weight: 800; color: var(--green-deep); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--green-deep); color: white; border-radius: 12px;
+    padding: 12px 22px; font-size: 14px; font-weight: 700;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── OFFLINE BANNER ── */
+  .offline-bar {
+    background: #B45309; color: white; text-align: center;
+    font-size: 12px; font-weight: 700; padding: 6px;
+    display: none; flex-shrink: 0;
+  }
+  .offline-bar.show { display: block; }
+
+  /* ── INSTALL PROMPT ── */
+  .install-bar {
+    background: var(--green-mid); color: white;
+    display: none; align-items: center; justify-content: space-between;
+    padding: 10px 16px; gap: 10px; flex-shrink: 0;
+  }
+  .install-bar.show { display: flex; }
+  .install-bar p { font-size: 13px; font-weight: 600; }
+  .install-bar-btns { display: flex; gap: 8px; flex-shrink: 0; }
+  .inst-btn {
+    border: none; border-radius: 8px; padding: 6px 12px;
+    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .inst-btn.primary { background: white; color: var(--green-deep); }
+  .inst-btn.secondary { background: transparent; color: rgba(255,255,255,0.7); }
+
+  @media (min-width: 480px) {
+    .menu-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 700px) {
+    #app { max-width: 480px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,0.12); }
+    body { background: #E8E4DC; display: flex; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Offline banner -->
+  <div class="offline-bar" id="offlineBar">⚠️ Немає з'єднання — дані збережено локально</div>
+
+  <!-- Install prompt -->
+  <div class="install-bar" id="installBar">
+    <p>📲 Встановити додаток на пристрій</p>
+    <div class="install-bar-btns">
+      <button class="inst-btn primary" id="installBtn">Встановити</button>
+      <button class="inst-btn secondary" id="installDismiss">Пізніше</button>
+    </div>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-icon">🍽️</span>
+      <div>
+        <h1>Їдальня</h1>
+        <div class="topbar-sub" id="topbarSub">Система замовлень</div>
+      </div>
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeClient" onclick="setMode('client')">Клієнт</button>
+      <button class="mode-btn" id="modeKitchen" onclick="setMode('kitchen')">Кухня</button>
+    </div>
+  </div>
+
+  <!-- Tab Nav -->
+  <nav class="tab-nav" id="tabNav">
+    <button class="tab-btn active" onclick="showTab('menu')" id="tab-menu">
+      <span class="tab-icon">🥗</span>Меню
+    </button>
+    <button class="tab-btn" onclick="showTab('cart')" id="tab-cart">
+      <span class="tab-icon">🧺</span>Кошик
+      <span class="badge" id="cartBadge" style="display:none">0</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('orders')" id="tab-orders">
+      <span class="tab-icon">📋</span>Замовлення
+      <span class="badge" id="ordersBadge" style="display:none">0</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('stats')" id="tab-stats">
+      <span class="tab-icon">📊</span>Статистика
+    </button>
+  </nav>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- MENU PANEL -->
+    <div class="panel active" id="panel-menu">
+      <div id="menuContent"></div>
+    </div>
+
+    <!-- CART PANEL -->
+    <div class="panel" id="panel-cart">
+      <div id="cartContent"></div>
+    </div>
+
+    <!-- ORDERS PANEL -->
+    <div class="panel" id="panel-orders">
+      <div class="orders-filter" id="ordersFilter">
+        <button class="filter-chip active" onclick="filterOrders('all')">Усі</button>
+        <button class="filter-chip" onclick="filterOrders('new')">🔶 Нові</button>
+        <button class="filter-chip" onclick="filterOrders('preparing')">🔵 Готується</button>
+        <button class="filter-chip" onclick="filterOrders('ready')">🟢 Готово</button>
+        <button class="filter-chip" onclick="filterOrders('done')">✓ Видано</button>
+      </div>
+      <div id="ordersContent"></div>
+    </div>
+
+    <!-- STATS PANEL -->
+    <div class="panel" id="panel-stats">
+      <div id="statsContent"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ DATA ══════════════════════════════════════════════════
+const MENU = [
+  { id:1, cat:'Перші страви',   emoji:'🍲', name:'Борщ',             sub:'з пампушкою',     price:35 },
+  { id:2, cat:'Перші страви',   emoji:'🥣', name:'Суп гороховий',   sub:'з хлібом',        price:28 },
+  { id:3, cat:'Перші страви',   emoji:'🍜', name:'Юшка курина',     sub:'з локшиною',      price:32 },
+  { id:4, cat:'Другі страви',   emoji:'🍗', name:'Котлета парова',  sub:'з пюре',          price:55 },
+  { id:5, cat:'Другі страви',   emoji:'🥩', name:'Гуляш яловичий', sub:'з гречкою',       price:62 },
+  { id:6, cat:'Другі страви',   emoji:'🐟', name:'Риба запечена',   sub:'з рисом',         price:58 },
+  { id:7, cat:'Другі страви',   emoji:'🫕', name:'Тушкована капуста','sub':'з морквою',    price:38 },
+  { id:8, cat:'Гарніри',        emoji:'🥔', name:'Пюре картопляне', sub:'зі сметаною',     price:22 },
+  { id:9, cat:'Гарніри',        emoji:'🌾', name:'Гречка відварна', sub:'з маслом',        price:20 },
+  { id:10,cat:'Гарніри',        emoji:'🍚', name:'Рис з овочами',   sub:'по-азіатськи',    price:24 },
+  { id:11,cat:'Салати',         emoji:'🥗', name:'Олів'є',          sub:'класичний',       price:30 },
+  { id:12,cat:'Салати',         emoji:'🥕', name:'Салат з буряком', sub:'з часником',      price:22 },
+  { id:13,cat:'Напої',          emoji:'🍵', name:'Чай чорний',      sub:'з лимоном',       price:12 },
+  { id:14,cat:'Напої',          emoji:'☕', name:'Компот',          sub:'з сухофруктів',   price:15 },
+  { id:15,cat:'Напої',          emoji:'🥛', name:'Кефір',           sub:'250 мл',          price:18 },
+  { id:16,cat:'Хлібобулочні',   emoji:'🍞', name:'Хліб пшеничний', sub:'2 скибки',        price:6  },
+  { id:17,cat:'Хлібобулочні',   emoji:'🥐', name:'Булочка',         sub:'з маком',         price:14 },
+];
+
+let cart   = {};       // {itemId: qty}
+let orders = loadOrders();
+let currentFilter = 'all';
+let currentMode   = 'client';
+let deferredPrompt = null;
+let orderCounter = orders.length ? Math.max(...orders.map(o=>o.num)) : 0;
+
+function loadOrders() {
+  try { return JSON.parse(localStorage.getItem('canteen_orders') || '[]'); }
+  catch { return []; }
+}
+function saveOrders() {
+  localStorage.setItem('canteen_orders', JSON.stringify(orders));
+}
+
+// ══ RENDER MENU ═══════════════════════════════════════════
+function renderMenu() {
+  const cats = [...new Set(MENU.map(i => i.cat))];
+  let html = '';
+  cats.forEach(cat => {
+    const items = MENU.filter(i => i.cat === cat);
+    html += `<div class="section-label">${cat}</div>`;
+    html += `<div class="menu-grid">`;
+    items.forEach(item => {
+      const qty = cart[item.id] || 0;
+      html += `
+      <div class="menu-card ${qty>0?'in-cart':''}" id="card-${item.id}">
+        <div class="card-emoji">${item.emoji}</div>
+        <div class="card-body">
+          <div class="card-name">${item.name}</div>
+          <div class="card-sub">${item.sub}</div>
+          <div class="card-footer">
+            <div class="card-price">${item.price} грн</div>
+            ${qty > 0
+              ? `<div class="card-qty">
+                   <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+                   <span class="qty-val">${qty}</span>
+                   <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+                 </div>`
+              : `<button class="add-btn" onclick="changeQty(${item.id},1)">+ Додати</button>`
+            }
+          </div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('menuContent').innerHTML = html;
+}
+
+function changeQty(id, delta) {
+  cart[id] = Math.max(0, (cart[id] || 0) + delta);
+  if (cart[id] === 0) delete cart[id];
+  updateCartBadge();
+  renderMenu();
+}
+
+function updateCartBadge() {
+  const total = Object.values(cart).reduce((s, v) => s + v, 0);
+  const badge = document.getElementById('cartBadge');
+  badge.textContent = total;
+  badge.style.display = total > 0 ? 'flex' : 'none';
+}
+
+// ══ RENDER CART ═══════════════════════════════════════════
+function renderCart() {
+  const keys = Object.keys(cart).map(Number);
+  const el = document.getElementById('cartContent');
+  if (!keys.length) {
+    el.innerHTML = `<div class="cart-empty"><div class="big">🧺</div><p>Кошик порожній.<br>Додайте страви з меню.</p></div>`;
+    return;
+  }
+  let totalQty = 0, totalPrice = 0;
+  let html = '';
+  keys.forEach(id => {
+    const item = MENU.find(i => i.id === id);
+    const qty  = cart[id];
+    totalQty   += qty;
+    totalPrice += qty * item.price;
+    html += `
+    <div class="cart-item">
+      <span class="ci-emoji">${item.emoji}</span>
+      <div class="ci-info">
+        <div class="ci-name">${item.name}</div>
+        <div class="ci-price">${item.price} грн × ${qty} = ${item.price*qty} грн</div>
+      </div>
+      <div class="ci-controls">
+        <div class="ci-qty">
+          <button class="qty-btn" onclick="changeQty(${id},-1)">−</button>
+          <span class="ci-qty-val">${qty}</span>
+          <button class="qty-btn" onclick="changeQty(${id},1)">+</button>
+        </div>
+        <button class="ci-del" onclick="changeQty(${id},-999)" title="Видалити">✕</button>
+      </div>
+    </div>`;
+  });
+  html += `
+  <div class="order-summary">
+    <div class="summary-row"><span>Позицій</span><span>${keys.length}</span></div>
+    <div class="summary-row"><span>Порцій</span><span>${totalQty}</span></div>
+    <div class="summary-row total"><span>До сплати</span><span>${totalPrice} грн</span></div>
+  </div>
+  <div class="customer-field">
+    <label>Ім'я замовника</label>
+    <input type="text" id="custName" placeholder="Іванов Іван" maxlength="50">
+  </div>
+  <div class="customer-field">
+    <label>Клас / Відділення</label>
+    <select id="custClass">
+      <option value="">— оберіть —</option>
+      <option>1-А</option><option>1-Б</option>
+      <option>2-А</option><option>2-Б</option>
+      <option>3-А</option><option>3-Б</option>
+      <option>4-А</option><option>4-Б</option>
+      <option>5-А</option><option>5-Б</option>
+      <option>6-А</option><option>6-Б</option>
+      <option>7-А</option><option>7-Б</option>
+      <option>8-А</option><option>8-Б</option>
+      <option>9-А</option><option>9-Б</option>
+      <option>10-А</option><option>10-Б</option>
+      <option>11-А</option><option>11-Б</option>
+      <option>Вчителі</option><option>Персонал</option>
+    </select>
+  </div>
+  <button class="submit-btn" onclick="submitOrder()">✓ Підтвердити замовлення (${totalPrice} грн)</button>`;
+  el.innerHTML = html;
+}
+
+function submitOrder() {
+  const name  = document.getElementById('custName')?.value.trim();
+  const cls   = document.getElementById('custClass')?.value;
+  if (!name) { showToast('⚠️ Введіть ім'я замовника'); return; }
+  if (!cls)  { showToast('⚠️ Оберіть клас/відділення'); return; }
+
+  const items = Object.entries(cart).map(([id, qty]) => {
+    const item = MENU.find(i => i.id == id);
+    return { id: +id, name: item.name, emoji: item.emoji, price: item.price, qty };
+  });
+  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+  orderCounter++;
+  const order = {
+    num: orderCounter,
+    customer: name,
+    cls, items, total,
+    status: 'new',
+    time: new Date().toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'}),
+    date: new Date().toLocaleDateString('uk-UA'),
+  };
+  orders.unshift(order);
+  saveOrders();
+  cart = {};
+  updateCartBadge();
+  updateOrdersBadge();
+  showToast(`✅ Замовлення №${orderCounter} прийнято!`);
+  showTab('orders');
+}
+
+// ══ RENDER ORDERS ═════════════════════════════════════════
+const STATUS_MAP = {
+  new:       { label:'Нове',     cls:'new',       emoji:'🔶' },
+  preparing: { label:'Готується',cls:'preparing', emoji:'🔵' },
+  ready:     { label:'Готово',   cls:'ready',     emoji:'🟢' },
+  done:      { label:'Видано',   cls:'done',      emoji:'✓'  },
+};
+
+function renderOrders() {
+  const filtered = currentFilter === 'all'
+    ? orders
+    : orders.filter(o => o.status === currentFilter);
+
+  const el = document.getElementById('ordersContent');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="cart-empty"><div class="big">📋</div><p>Замовлень немає</p></div>`;
+    return;
+  }
+  let html = '';
+  filtered.forEach(order => {
+    const s = STATUS_MAP[order.status];
+    const isKitchen = currentMode === 'kitchen';
+    html += `
+    <div class="order-card status-${order.status}">
+      <div class="order-header">
+        <div>
+          <div class="order-num">№${order.num}</div>
+          <div class="order-customer">👤 ${order.customer} · ${order.cls}</div>
+        </div>
+        <div class="order-time">${order.time}</div>
+      </div>
+      <span class="status-badge ${s.cls}">${s.emoji} ${s.label}</span>
+      <div class="order-items-list">
+        ${order.items.map(i => `
+          <div class="oi">
+            <span class="oi-name">${i.emoji} ${i.name}</span>
+            <span class="oi-qty">${i.qty} шт.</span>
+          </div>`).join('')}
+      </div>
+      <div class="order-total-line">Разом: ${order.total} грн</div>
+      <div class="order-actions">
+        ${order.status === 'new'
+          ? `<button class="action-btn btn-prepare" onclick="setStatus(${order.num},'preparing')">🔵 Готувати</button>`
+          : ''}
+        ${order.status === 'preparing'
+          ? `<button class="action-btn btn-ready" onclick="setStatus(${order.num},'ready')">🟢 Готово</button>`
+          : ''}
+        ${order.status === 'ready'
+          ? `<button class="action-btn btn-done" onclick="setStatus(${order.num},'done')">✓ Видано</button>`
+          : ''}
+        ${order.status !== 'done'
+          ? `<button class="action-btn btn-cancel" onclick="cancelOrder(${order.num})">✕ Скасувати</button>`
+          : ''}
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function setStatus(num, status) {
+  const order = orders.find(o => o.num === num);
+  if (order) { order.status = status; saveOrders(); updateOrdersBadge(); renderOrders(); }
+  const labels = { preparing:'готується', ready:'готово — можна забирати!', done:'видано' };
+  showToast(`Замовлення №${num}: ${labels[status] || status}`);
+}
+
+function cancelOrder(num) {
+  orders = orders.filter(o => o.num !== num);
+  saveOrders(); updateOrdersBadge(); renderOrders();
+  showToast(`Замовлення №${num} скасовано`);
+}
+
+function filterOrders(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim().includes(
+      f==='all'?'Усі':f==='new'?'Нові':f==='preparing'?'Готується':f==='ready'?'Готово':'Видано'
+    ));
+  });
+  renderOrders();
+}
+
+function updateOrdersBadge() {
+  const active = orders.filter(o => o.status !== 'done').length;
+  const b = document.getElementById('ordersBadge');
+  b.textContent = active;
+  b.style.display = active > 0 ? 'flex' : 'none';
+}
+
+// ══ RENDER STATS ══════════════════════════════════════════
+function renderStats() {
+  const today = new Date().toLocaleDateString('uk-UA');
+  const todayOrders = orders.filter(o => o.date === today);
+  const totalRevenue = todayOrders.reduce((s, o) => s + o.total, 0);
+  const activeNow    = orders.filter(o => ['new','preparing','ready'].includes(o.status)).length;
+  const doneToday    = todayOrders.filter(o => o.status === 'done').length;
+
+  // top items today
+  const itemCounts = {};
+  todayOrders.forEach(o => o.items.forEach(i => {
+    itemCounts[i.name] = (itemCounts[i.name] || 0) + i.qty;
+  }));
+  const topItems = Object.entries(itemCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const recent = [...orders].slice(0,5);
+
+  document.getElementById('statsContent').innerHTML = `
+  <div class="stats-grid">
+    <div class="stat-card highlight">
+      <div class="stat-icon">💰</div>
+      <div class="stat-val">${totalRevenue}</div>
+      <div class="stat-label">грн сьогодні</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-val">${todayOrders.length}</div>
+      <div class="stat-label">замовлень сьогодні</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-val">${activeNow}</div>
+      <div class="stat-label">активних зараз</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-val">${doneToday}</div>
+      <div class="stat-label">видано сьогодні</div>
+    </div>
+  </div>
+
+  ${topItems.length ? `
+  <div class="section-label">Топ страв сьогодні</div>
+  ${topItems.map(([name, qty]) => `
+    <div class="recent-item">
+      <div class="ri-left">
+        <div class="ri-name">${name}</div>
+        <div class="ri-cust">${qty} порц.</div>
+      </div>
+      <div class="ri-amount">${qty} ×</div>
+    </div>`).join('')}
+  ` : ''}
+
+  ${recent.length ? `
+  <div class="recent-title" style="margin-top:16px">Останні замовлення</div>
+  ${recent.map(o => `
+    <div class="recent-item">
+      <div class="ri-left">
+        <div class="ri-name">№${o.num} · ${o.customer}</div>
+        <div class="ri-cust">${o.cls} · ${o.time}</div>
+      </div>
+      <div class="ri-amount">${o.total} грн</div>
+    </div>`).join('')}
+  ` : ''}`;
+}
+
+// ══ TABS & MODE ═══════════════════════════════════════════
+function showTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'menu')   renderMenu();
+  if (tab === 'cart')   renderCart();
+  if (tab === 'orders') renderOrders();
+  if (tab === 'stats')  renderStats();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeClient').classList.toggle('active', mode === 'client');
+  document.getElementById('modeKitchen').classList.toggle('active', mode === 'kitchen');
+  document.getElementById('topbarSub').textContent =
+    mode === 'kitchen' ? '🍳 Режим кухні' : 'Система замовлень';
+
+  // In kitchen mode, show orders tab by default
+  if (mode === 'kitchen') showTab('orders');
+  else showTab('menu');
+}
+
+// ══ TOAST ═════════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ══ PWA ═══════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBar').classList.add('show');
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const {outcome} = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBar').classList.remove('show');
+  if (outcome === 'accepted') showToast('✅ Додаток встановлено!');
+});
+
+document.getElementById('installDismiss').addEventListener('click', () => {
+  document.getElementById('installBar').classList.remove('show');
+});
+
+window.addEventListener('online',  () => document.getElementById('offlineBar').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offlineBar').classList.add('show'));
+
+// ══ INIT ══════════════════════════════════════════════════
+updateCartBadge();
+updateOrdersBadge();
+renderMenu();
+</script>
+</body>
+</html>
