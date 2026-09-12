@@ -457,7 +457,7 @@
 <!-- TECH CARD MODAL -->
 <div class="modal-overlay" id="tcModal" onclick="closeTCModal(event)">
   <div class="modal-box" id="tcBox">
-    <button class="modal-close" onclick="closeTCModal()">✕</button>
+    <button class="modal-close" onclick="closeTCModalForce()">✕</button>
     <div class="modal-handle"></div>
     <div class="modal-head">
       <div class="modal-title" id="tcTitle"></div>
@@ -934,14 +934,10 @@ function renderMenu() {
           <div class="card-footer">
             <div class="card-price">${item.price} грн</div>
             <div style="display:flex;gap:5px;align-items:center">
-              ${item.techcard ? `<button class="tc-btn" onclick="event.stopPropagation();openTC(${item.id})">ТК</button>` : ''}
+              ${item.techcard ? '<button class="tc-btn" onclick="event.stopPropagation();openTC(' + item.id + ')">ТК</button>' : ''}
               ${qty > 0
-                ? `<div class="card-qty">
-                     <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
-                     <span class="qty-val">${qty}</span>
-                     <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
-                   </div>`
-                : `<button class="add-btn" onclick="changeQty(${item.id},1)">+ Додати</button>`
+                ? '<div class="card-qty"><button class="qty-btn" onclick="changeQty(' + item.id + ',-1)">−</button><span class="qty-val">' + qty + '</span><button class="qty-btn" onclick="changeQty(' + item.id + ',1)">+</button></div>'
+                : '<button class="add-btn" onclick="changeQty(' + item.id + ',1)">+ Додати</button>'
               }
             </div>
           </div>
@@ -1259,7 +1255,12 @@ function openTC(id) {
 }
 
 function closeTCModal(e) {
-  if (e && e.target !== document.getElementById('tcModal')) return;
+  // only close if clicking the dark overlay itself, not the box
+  if (e && !e.target.classList.contains('modal-overlay')) return;
+  document.getElementById('tcModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeTCModalForce() {
   document.getElementById('tcModal').classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -1325,6 +1326,11 @@ document.getElementById('installDismiss').addEventListener('click', () => {
 window.addEventListener('online',  () => document.getElementById('offlineBar').classList.remove('show'));
 window.addEventListener('offline', () => document.getElementById('offlineBar').classList.add('show'));
 
+
+// Close modal on ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeTCModalForce();
+});
 // ══ INIT ══════════════════════════════════════════════════
 updateCartBadge();
 updateOrdersBadge();
