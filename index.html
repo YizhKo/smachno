@@ -1331,24 +1331,39 @@ function submitOrder(){
   const total = items.reduce((s,i)=>s+i.price*i.qty,0);
   const submitBtn = document.querySelector('.submit-btn');
   if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Оформлюємо…'; }
-  nextOrderNumber().then(function(num){
+  nextOrderNumber().then(async function(num){
+    // анонімна авторизація клієнта — щоб він міг читати своє замовлення
+    let clientUid = null;
+    if(firebaseReady && fbAuth){
+      try{
+        if(!fbAuth.currentUser) await fbAuth.signInAnonymously();
+        clientUid = fbAuth.currentUser ? fbAuth.currentUser.uid : null;
+      }catch(e){ console.warn('Anonymous sign-in failed', e); }
+    }
     const baseOrder = {
       num, name, phone, address, time,
       items, total, status:'new',
       created: new Date().toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'}),
       date: new Date().toLocaleDateString('uk-UA'),
+      clientUid,   // ← додано
     };
     if(firebaseReady){
       console.log('ЇжКо: надсилаємо замовлення в Firestore', baseOrder);
       return db.collection('orders').add(
         Object.assign({}, baseOrder, {createdAt: firebase.firestore.FieldValue.serverTimestamp()})
-).then(function(ref){
-  console.log('ЇжКо: замовлення записано, ID:', ref.id);
-  orders.unshift(Object.assign({}, baseOrder, { id: ref.id }));
-  saveOrders();
-  updateOrdersBadge();
-  return ref;
-});    } else {
+    ).then(function(ref){
+      console.log('ЇжКо: замовлення записано, ID:', ref.id);
+      orders.unshift(Object.assign({}, baseOrder, { id: ref.id }));
+      saveOrders();
+      updateOrdersBadge();
+      try{
+        const ids = JSON.parse(localStorage.getItem('yizhko_my_order_ids') || '[]');
+        if(!ids.includes(ref.id)) ids.push(ref.id);
+        localStorage.setItem('yizhko_my_order_ids', JSON.stringify(ids));
+      }catch(e){ console.warn('save my order ids failed', e); }
+      refreshMyOrders();
+      return ref;
+    });    } else {
       orders.unshift(baseOrder);
       saveOrders();
       return Promise.resolve();
@@ -1409,12 +1424,15 @@ function renderOrders(){
       + order.items.map(i=>'<div class="oi"><span>' + i.emoji + ' ' + i.name + '</span><span class="oi-qty">' + i.qty + ' шт.</span></div>').join('')
       + '</div>'
       + '<div class="order-total-line">Разом: ' + order.total + ' грн</div>'
-      + '<div class="order-actions">'
-      + (order.status==='new' ? '<button class="action-btn btn-prepare" onclick="setStatus(' + order.num + ',\'preparing\')">🔵 Готувати</button>' : '')
-      + (order.status==='preparing' ? '<button class="action-btn btn-ready" onclick="setStatus(' + order.num + ',\'ready\')">🟢 Готово</button>' : '')
-      + (order.status==='ready' ? '<button class="action-btn btn-done" onclick="setStatus(' + order.num + ',\'done\')">✓ Видано</button>' : '')
-      + (order.status!=='done' ? '<button class="action-btn btn-cancel" onclick="cancelOrder(' + order.num + ')">✕ Скасувати</button>' : '')
-      + '</div></div>';
+      + (currentMode === 'kitchen' ? (
+          '<div class="order-actions">'
+          + (order.status==='new' ? '<button class="action-btn btn-prepare" onclick="setStatus(' + order.num + ',\'preparing\')">🔵 Готувати</button>' : '')
+          + (order.status==='preparing' ? '<button class="action-btn btn-ready" onclick="setStatus(' + order.num + ',\'ready\')">🟢 Готово</button>' : '')
+          + (order.status==='ready' ? '<button class="action-btn btn-done" onclick="setStatus(' + order.num + ',\'done\')">✓ Видано</button>' : '')
+          + (order.status!=='done' ? '<button class="action-btn btn-cancel" onclick="cancelOrder(' + order.num + ')">✕ Скасувати</button>' : '')
+          + '</div>'
+        ) : '')
+      + '</div>';
   });
   el.innerHTML = html;
 }
@@ -2104,6 +2122,48 @@ document.getElementById('installDismiss').addEventListener('click',()=>{
 window.addEventListener('online', ()=>document.getElementById('offlineBar').classList.remove('show'));
 window.addEventListener('offline',()=>document.getElementById('offlineBar').classList.add('show'));
 
+// ══ ТРЕКІНГ СТАТУСУ ЗАМОВЛЕНЬ КЛІЄНТА ══════════════════════
+async function refreshMyOrders(){
+  if(!firebaseReady || !db || !fbAuth || !fbAuth.currentUser) return;
+  const ids = (() => { try{ return JSON.parse(localStorage.getItem('yizhko_my_order_ids') || '[]'); }catch{ return []; } })();
+  if(!ids.length) return;
+  let changed = false;
+  for(const id of ids){
+    try{
+      const doc = await db.collection('orders').doc(id).get();
+      if(!doc.exists) continue;
+      const data = doc.data();
+      const idx = orders.findIndex(o => o.id === id);
+      if(idx >= 0){
+        if(orders[idx].status !== data.status){
+          orders[idx].status = data.status;
+          changed = true;
+        }
+      } else {
+        orders.unshift(Object.assign({}, data, { id }));
+        changed = true;
+      }
+    }catch(e){ /* ігноруємо */ }
+  }
+  if(changed){
+    saveOrders();
+    updateOrdersBadge();
+    if(currentMode === 'client') renderOrders();
+  }
+}
+
+let clientTrackerStarted = false;
+function initClientOrdersTracker(){
+  if(!firebaseReady || !fbAuth) return;
+  if(clientTrackerStarted) return;
+  clientTrackerStarted = true;
+  refreshMyOrders();
+  setInterval(function(){
+    if(currentMode === 'client') refreshMyOrders();
+  }, 20000);
+  console.log('Клієнт: трекінг статусу запущено');
+}
+
 // ══ INIT ══════════════════════════════════════════════════
 applyStoredPrices();
 portions = loadPortions();
@@ -2111,6 +2171,14 @@ updateKitchenButtonVisibility();
 updateCartBadge();
 updateOrdersBadge();
 renderMenu();
+
+if(firebaseReady && fbAuth){
+  fbAuth.onAuthStateChanged(function(user){
+    if(user && currentMode === 'client'){
+      initClientOrdersTracker();
+    }
+  });
+}
 </script>
 </body>
 </html>
