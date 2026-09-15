@@ -679,6 +679,7 @@ function requestKitchenNotifications(){
 
 function initOrdersSync(){
   if(!firebaseReady || !fbAuth || !fbAuth.currentUser) return;
+  if(ordersSyncStarted) return;
   db.collection('orders').orderBy('num','desc').onSnapshot(function(snap){
     const incoming = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     if(ordersSyncStarted){
@@ -1185,6 +1186,8 @@ let orderCounter = orders.length ? Math.max(...orders.map(o=>o.num)) : 0;
 let modalItemId  = null;
 let modalQty     = 1;
 let adminUnlocked = false;
+let adminKitchenView = false;   // адмін дивиться кухню
+let kitchenUnlocked = false;
 
 // порції: завантажити зі сховища або ставимо 10 для всіх
 function loadPortions(){
@@ -1569,18 +1572,29 @@ function setMode(mode){
   if(mode==='admin'){
     if(!adminUnlocked){ renderAdmin(); showTab('admin'); return; }
   }
-  if(mode==='kitchen' && !kitchenUnlocked){
+  // адмін має право зайти в режим кухні без окремого входу
+  if(mode==='kitchen' && !kitchenUnlocked && !adminUnlocked){
     showTab('orders');
     renderKitchenGate();
     return;
+  }
+  if(mode==='kitchen' && adminUnlocked){
+    adminKitchenView = true;
+    kitchenUnlocked  = true;
+  } else {
+    adminKitchenView = false;
   }
   currentMode=mode;
   document.getElementById('modeClient').classList.toggle('active', mode==='client');
   document.getElementById('modeKitchen').classList.toggle('active', mode==='kitchen');
   document.getElementById('modeAdmin').classList.toggle('active', mode==='admin');
-  // show/hide admin tab
   document.getElementById('tab-admin').style.display = mode==='admin' ? 'flex' : 'none';
-  if(mode==='kitchen'){ document.getElementById('ordersFilter').style.display=''; showTab('orders'); requestKitchenNotifications(); }
+  if(mode==='kitchen'){
+    document.getElementById('ordersFilter').style.display='';
+    showTab('orders');
+    requestKitchenNotifications();
+    initOrdersSync();
+  }
   else if(mode==='admin') { renderAdmin(); showTab('admin'); }
   else showTab('menu');
 }
@@ -1605,51 +1619,149 @@ function updateKitchenButtonVisibility(){
 
 async function ensureKitchenAuth(){
   if(!firebaseReady || !fbAuth) return null;
-  try{ if(fbAuth.currentUser) return fbAuth.currentUser; return (await fbAuth.signInAnonymously()).user; }
-  catch(e){ console.error(e); showToast('❌ Не вдалося підключити захищений доступ кухні'); return null; }
+  return fbAuth.currentUser || null;
 }
 
 async function renderKitchenGate(){
   document.getElementById('ordersFilter').style.display='none';
-  const user=await ensureKitchenAuth(); if(!user) return;
-  const cached=getKitchenAccessCache();
-  if(cached && cached.status==='approved' && await verifyKitchenAccess(cached.phone)) return;
-  document.getElementById('ordersContent').innerHTML='<div class="staff-gate-wrap">'
-    +'<div class="staff-gate-icon">👩‍🍳</div><div class="staff-gate-title">Доступ для працівників кухні</div>'
-    +'<div class="staff-gate-sub">Вкажіть ім’я та номер телефону — адміністратор підтвердить доступ, і він відкриється на цьому пристрої.</div>'
-    +'<input type="text" id="staffName" class="staff-input" placeholder="Ваше ім’я" maxlength="40">'
-    +'<input type="tel" id="staffPhone" class="staff-input" placeholder="+380 XX XXX XX XX" maxlength="20">'
-    +'<button class="staff-btn" onclick="submitKitchenRequest()">Подати заявку</button></div>';
+  if(!firebaseReady){
+    document.getElementById('ordersContent').innerHTML =
+      '<div class="staff-gate-wrap"><div class="staff-gate-icon">⚠️</div>'
+      + '<div class="staff-gate-title">Firebase не підключено</div>'
+      + '<div class="staff-gate-sub">Зверніться до адміністратора закладу.</div></div>';
+    return;
+  }
+  // якщо кухар уже увійшов через email/пароль — перевіряємо доступ
+  if(fbAuth.currentUser){
+    const ok = await verifyKitchenAccess(fbAuth.currentUser.uid);
+    if(ok) return;
+  }
+  document.getElementById('ordersContent').innerHTML =
+    '<div class="staff-gate-wrap">'
+    + '<div class="staff-gate-icon">👩‍🍳</div>'
+    + '<div class="staff-gate-title">Доступ для працівників кухні</div>'
+    + '<div class="staff-gate-sub">Заповніть усі поля. Адміністратор підтвердить доступ, після чого ви зможете увійти з цими email та паролем.</div>'
+    + '<input type="text"     id="staffName"  class="staff-input" placeholder="Ваше ім’я" maxlength="40">'
+    + '<input type="tel"      id="staffPhone" class="staff-input" placeholder="+380 XX XXX XX XX" maxlength="20">'
+    + '<input type="email"    id="staffEmail" class="staff-input" placeholder="Email (для входу)" maxlength="80">'
+    + '<input type="password" id="staffPass"  class="staff-input" placeholder="Пароль (мінімум 6 символів)" maxlength="60">'
+    + '<button class="staff-btn" onclick="submitKitchenRequest()">Подати заявку</button>'
+    + '<button class="staff-btn sec" onclick="kitchenSignInForm()">Уже схвалено? Увійти</button>'
+    + '</div>';
 }
 
-async function verifyKitchenAccess(phone){
-  if(!firebaseReady || !db || !fbAuth || !fbAuth.currentUser) return false;
+async function kitchenSignInForm(){
+  document.getElementById('ordersContent').innerHTML =
+    '<div class="staff-gate-wrap">'
+    + '<div class="staff-gate-icon">🔐</div>'
+    + '<div class="staff-gate-title">Вхід для кухні</div>'
+    + '<div class="staff-gate-sub">Введіть email та пароль, які ви вказали при поданні заявки.</div>'
+    + '<input type="email"    id="kitchenLoginEmail" class="staff-input" placeholder="Email">'
+    + '<input type="password" id="kitchenLoginPass"  class="staff-input" placeholder="Пароль">'
+    + '<button class="staff-btn" onclick="kitchenSignIn()">Увійти</button>'
+    + '<button class="staff-btn sec" onclick="renderKitchenGate()">← Назад до заявки</button>'
+    + '</div>';
+}
+
+async function kitchenSignIn(){
+  const email = document.getElementById('kitchenLoginEmail')?.value.trim();
+  const pass  = document.getElementById('kitchenLoginPass')?.value;
+  if(!email || !pass){ showToast('❌ Введіть email і пароль'); return; }
   try{
-    const snap=await db.collection('kitchen_access').doc(phone).get(); const data=snap.exists?snap.data():null;
-    const ok=!!data && data.status==='approved' && data.uid===fbAuth.currentUser.uid;
-    if(!ok){ clearKitchenAccessCache(); kitchenUnlocked=false; updateKitchenButtonVisibility(); return false; }
-    kitchenUnlocked=true; currentMode='kitchen'; document.getElementById('modeKitchen').classList.add('active');
-    document.getElementById('modeClient').classList.remove('active'); document.getElementById('ordersFilter').style.display=''; showTab('orders'); requestKitchenNotifications(); initOrdersSync(); return true;
+    await fbAuth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged нижче сам обробить
+  }catch(e){
+    showToast('❌ Невірний email або пароль');
+  }
+}
+
+async function verifyKitchenAccess(uid){
+  if(!firebaseReady || !db || !uid) return false;
+  try{
+    const snap = await db.collection('kitchen_users').doc(uid).get();
+    const ok   = snap.exists && snap.data().status === 'approved';
+    if(!ok){ kitchenUnlocked = false; return false; }
+    kitchenUnlocked = true;
+    currentMode = 'kitchen';
+    document.getElementById('modeKitchen').classList.add('active');
+    document.getElementById('modeClient').classList.remove('active');
+    document.getElementById('ordersFilter').style.display = '';
+    showTab('orders');
+    requestKitchenNotifications();
+    initOrdersSync();
+    return true;
   }catch(e){ console.error(e); return false; }
 }
 
 async function submitKitchenRequest(){
-  const name=(document.getElementById('staffName')?.value||'').trim(), phoneRaw=(document.getElementById('staffPhone')?.value||'').trim(), phone=normalizePhone(phoneRaw);
-  if(!name){showToast('❌ Введіть ім’я');return;} if(phone.length<9){showToast('❌ Введіть коректний номер телефону');return;}
-  if(!firebaseReady||!db||!fbAuth){showToast('⚠️ Firebase не підключено');return;}
+  const name  = (document.getElementById('staffName')?.value  || '').trim();
+  const phone = (document.getElementById('staffPhone')?.value || '').trim();
+  const email = (document.getElementById('staffEmail')?.value || '').trim();
+  const pass  = (document.getElementById('staffPass')?.value  || '');
+
+  if(!name)                     { showToast('❌ Введіть ім’я'); return; }
+  if(normalizePhone(phone).length < 9){ showToast('❌ Введіть коректний номер телефону'); return; }
+  if(!email || !email.includes('@')){ showToast('❌ Введіть коректний email'); return; }
+  if(pass.length < 6)           { showToast('❌ Пароль має бути мінімум 6 символів'); return; }
+  if(!firebaseReady || !db || !fbAuth){ showToast('⚠️ Firebase не підключено'); return; }
+
   try{
-    const user=await ensureKitchenAuth(); if(!user)return; const docRef=db.collection('kitchen_access').doc(phone), snap=await docRef.get();
-    if(snap.exists){ const data=snap.data();
-      if(data.uid && data.uid!==user.uid){showToast('⛔ Цей номер уже прив’язаний до іншого пристрою');return;}
-      if(data.status==='approved'){setKitchenAccessCache({phone,status:'approved'});await verifyKitchenAccess(phone);if(kitchenUnlocked)showToast('✅ Доступ підтверджено!');}
-      else if(data.status==='pending')renderKitchenStatus(phone,'pending'); else renderKitchenStatus(phone,'rejected');
-    } else { await docRef.set({phone:phoneRaw,name:name,uid:user.uid,status:'pending',requestedAt:firebase.firestore.FieldValue.serverTimestamp()}); renderKitchenStatus(phone,'pending'); }
-  }catch(e){console.error(e);showToast('❌ Помилка з’єднання. Спробуйте ще раз.');}
+    // 1. створюємо акаунт
+    let cred;
+    try{
+      cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
+    }catch(e){
+      if(e.code === 'auth/email-already-in-use'){
+        // можливо, заявку вже подано раніше — спробуємо увійти
+        try{
+          cred = await fbAuth.signInWithEmailAndPassword(email, pass);
+        }catch(_){
+          showToast('❌ Цей email уже зареєстровано з іншим паролем');
+          return;
+        }
+      } else if(e.code === 'auth/weak-password'){
+        showToast('❌ Пароль занадто простий');
+        return;
+      } else {
+        showToast('❌ ' + (e.message || 'Помилка реєстрації'));
+        return;
+      }
+    }
+    const uid = cred.user.uid;
+
+    // 2. заявка
+    const docRef = db.collection('kitchen_access').doc(normalizePhone(phone));
+    const snap   = await docRef.get();
+    if(snap.exists){
+      const data = snap.data();
+      if(data.uid && data.uid !== uid){
+        showToast('⛔ Цей номер уже прив’язано до іншого акаунта');
+        return;
+      }
+      if(data.status === 'approved'){
+        await verifyKitchenAccess(uid);
+        if(kitchenUnlocked) showToast('✅ Доступ підтверджено!');
+        return;
+      }
+      await docRef.update({ name, phone, email, uid,
+        requestedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    } else {
+      await docRef.set({
+        phone, name, email, uid,
+        status: 'pending',
+        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    renderKitchenStatus(normalizePhone(phone), 'pending');
+  }catch(e){
+    console.error(e);
+    showToast('❌ Помилка з’єднання. Спробуйте ще раз.');
+  }
 }
 
 function renderKitchenStatus(phone, status){
   const msg = status==='pending'
-    ? { icon:'⏳', title:'Заявку подано', sub:'Очікуйте підтвердження від адміністратора. Спробуйте ще раз пізніше.' }
+    ? { icon:'⏳', title:'Заявку подано', sub:'Очікуйте підтвердження від адміністратора. Після схвалення натисніть "Увійти".' }
     : { icon:'⛔', title:'Доступ відхилено', sub:'Зверніться до адміністратора закладу.' };
   document.getElementById('ordersContent').innerHTML =
     '<div class="staff-gate-wrap">'
@@ -1657,6 +1769,7 @@ function renderKitchenStatus(phone, status){
     + '<div class="staff-gate-title">' + msg.title + '</div>'
     + '<div class="staff-gate-sub">' + msg.sub + '</div>'
     + '<button class="staff-btn" onclick="checkKitchenStatus(\'' + phone + '\')">Перевірити статус</button>'
+    + '<button class="staff-btn" onclick="kitchenSignInForm()">Увійти (якщо схвалено)</button>'
     + '<button class="staff-btn sec" onclick="renderKitchenGate()">← Назад</button>'
     + '</div>';
 }
@@ -1665,20 +1778,18 @@ async function checkKitchenStatus(phone){
   if(!firebaseReady || !db) return;
   try{
     const snap = await db.collection('kitchen_access').doc(phone).get();
-    if(snap.exists && snap.data().status==='approved'){
-      setKitchenAccessCache({phone, status:'approved'});
-      updateKitchenButtonVisibility();
-      kitchenUnlocked = true;
-      currentMode = 'kitchen';
-      document.getElementById('modeKitchen').classList.add('active');
-      document.getElementById('modeClient').classList.remove('active');
-      document.getElementById('ordersFilter').style.display = '';
-      showTab('orders');
-      showToast('✅ Доступ підтверджено!');
-    } else if(snap.exists){
-      if(snap.data().status==='approved' && snap.data().uid===fbAuth.currentUser?.uid){ await verifyKitchenAccess(phone); return; }
-      renderKitchenStatus(phone, snap.data().status);
-      showToast(snap.data().status==='pending' ? 'Ще очікує підтвердження' : 'Доступ відхилено');
+    if(!snap.exists){ showToast('Заявку не знайдено'); return; }
+    const data = snap.data();
+    if(data.status === 'approved' && data.uid){
+      const ok = await verifyKitchenAccess(data.uid);
+      if(ok) showToast('✅ Доступ підтверджено!');
+      else   showToast('⛔ Ще не схвалено адміністратором');
+    } else if(data.status === 'pending'){
+      renderKitchenStatus(phone, 'pending');
+      showToast('⏳ Ще очікує підтвердження');
+    } else {
+      renderKitchenStatus(phone, data.status);
+      showToast('Доступ відхилено');
     }
   }catch(e){ showToast('❌ Не вдалося перевірити. Перевірте з’єднання.'); }
 }
@@ -1736,36 +1847,60 @@ let staffAuthed = false;
 
 // ── Єдиний onAuthStateChanged: обробляє і адміна і кухню ──
 if(firebaseReady && fbAuth){
-  fbAuth.onAuthStateChanged(function(user){
-    const provider=user && user.providerData && user.providerData[0] ? user.providerData[0].providerId : '';
-    const isAdminSession=!!user && provider==='password' && user.uid===ADMIN_UID;
-    const isUnauthorizedPassword=!!user && provider==='password' && !isAdminSession;
-    staffAuthed=isAdminSession;
+  fbAuth.onAuthStateChanged(async function(user){
+    const provider = user && user.providerData && user.providerData[0] ? user.providerData[0].providerId : '';
+    const isAdminSession = !!user && provider === 'password' && user.uid === ADMIN_UID;
+    const isOtherPassword = !!user && provider === 'password' && !isAdminSession;
+    staffAuthed = isAdminSession;
 
+    // ── АДМІН ──
     if(isAdminSession){
-      if(!adminUnlocked){ adminUnlocked=true; currentMode='admin'; document.getElementById('modeAdmin').classList.add('active'); document.getElementById('modeClient').classList.remove('active'); document.getElementById('modeKitchen').classList.remove('active'); document.getElementById('tab-admin').style.display='flex'; renderAdmin(); showTab('admin'); showToast('✅ Вхід виконано'); }
-      else if(currentMode==='admin') renderAdmin();
+      adminUnlocked = true;
+      currentMode = 'admin';
+      document.getElementById('modeAdmin').classList.add('active');
+      document.getElementById('modeClient').classList.remove('active');
+      document.getElementById('modeKitchen').classList.remove('active');
+      document.getElementById('tab-admin').style.display = 'flex';
+      renderAdmin();
+      showTab('admin');
+      showToast('✅ Вхід адміністратора');
       initOrdersSync();
-    }else if(isUnauthorizedPassword){
-      adminUnlocked=false;
-      staffAuthed=false;
-      currentMode='client';
-      document.getElementById('modeClient').classList.add('active');
-      document.getElementById('modeAdmin').classList.remove('active');
-      document.getElementById('modeKitchen').classList.remove('active');
-      document.getElementById('tab-admin').style.display='none';
-      showTab('menu');
-      showToast('⛔ Цей Firebase-акаунт не має прав адміністратора');
-      fbAuth.signOut();
-    }else if(!user && adminUnlocked){
-      adminUnlocked=false;
-      staffAuthed=false;
-      currentMode='client';
-      document.getElementById('modeClient').classList.add('active');
-      document.getElementById('modeAdmin').classList.remove('active');
-      document.getElementById('modeKitchen').classList.remove('active');
-      document.getElementById('tab-admin').style.display='none';
-      showTab('menu');
+      return;
+    }
+
+    // ── КУХАР (email/пароль, не адмін) ──
+    if(isOtherPassword){
+      adminUnlocked = false;
+      const ok = await verifyKitchenAccess(user.uid);
+      if(ok){
+        showToast('✅ Доступ кухні підтверджено');
+        initOrdersSync();
+      } else {
+        // не схвалено — показуємо форму заявки
+        kitchenUnlocked = false;
+        currentMode = 'client';
+        document.getElementById('modeKitchen').classList.remove('active');
+        document.getElementById('modeClient').classList.add('active');
+        showTab('orders');
+        renderKitchenGate();
+        showToast('⏳ Вашу заявку ще не схвалено');
+      }
+      return;
+    }
+
+    // ── ГОСТЬ ──
+    if(!user){
+      if(adminUnlocked || kitchenUnlocked){
+        adminUnlocked  = false;
+        kitchenUnlocked = false;
+        staffAuthed    = false;
+        currentMode    = 'client';
+        document.getElementById('modeClient').classList.add('active');
+        document.getElementById('modeAdmin').classList.remove('active');
+        document.getElementById('modeKitchen').classList.remove('active');
+        document.getElementById('tab-admin').style.display = 'none';
+        showTab('menu');
+      }
     }
   });
 }
@@ -1785,8 +1920,17 @@ function renderKitchenAdminSectionHtml(){
       + '</div>';
   }
   return '<div class="admin-section-label" style="margin-top:22px">🔑 Доступ для кухні</div>'
+    + kitchenSwitchBtn
     + '<div id="kitchenReqList"><p class="staff-admin-hint">Завантаження заявок…</p></div>'
     + '<button class="staff-btn sec" onclick="staffAdminSignOut()">Вийти з керування кухнею</button>';
+}
+
+function adminOpenKitchen(){
+  if(!adminUnlocked){ showToast('Спочатку увійдіть як адмін'); return; }
+  adminKitchenView = true;
+  kitchenUnlocked  = true;
+  setMode('kitchen');
+  showToast('👩‍🍳 Режим кухні (як адмін)');
 }
 
 function staffAdminSignIn(){
@@ -1817,7 +1961,7 @@ async function loadKitchenRequests(){
           : '<span class="staff-badge-pending">Очікує</span>';
       html += '<div class="admin-dish-row">'
         + '<div class="admin-dish-info"><div class="admin-dish-name">' + (d.name || 'Без імені') + '</div>'
-        + '<div class="admin-dish-cat">' + (d.phone || doc.id) + '</div></div>'
+        + '<div class="admin-dish-cat">' + (d.phone || doc.id) + (d.email ? ' · ' + d.email : '') + '</div></div>'
         + badge
         + '<div class="admin-qty-wrap">'
         + (d.status!=='approved' ? '<button class="admin-qty-btn" title="Схвалити" onclick="staffSetStatus(\'' + doc.id + '\',\'approved\')">✓</button>' : '<button class="admin-qty-btn" title="Скасувати доступ" onclick="staffSetStatus(\'' + doc.id + '\',\'rejected\')">⛔</button>')
