@@ -470,6 +470,22 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   .admin-pin-wrap input[type=password]:focus{
     border-color:var(--accent);background:var(--white);
   }
+
+  /* ── KITCHEN NEW ORDER NOTIFICATION ── */
+  .kitchen-alert{
+    position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-140px);
+    width:min(440px,calc(100% - 28px));z-index:1000;
+    background:var(--dark);color:#fff;border-radius:16px;padding:14px 16px;
+    box-shadow:0 8px 30px rgba(0,0,0,.28);transition:transform .28s cubic-bezier(.34,1.35,.64,1);
+    display:flex;align-items:center;gap:12px;cursor:pointer;
+  }
+  .kitchen-alert.show{transform:translateX(-50%) translateY(0)}
+  .kitchen-alert-icon{font-size:28px;flex-shrink:0}
+  .kitchen-alert-text{flex:1;min-width:0}
+  .kitchen-alert-title{font-size:14px;font-weight:800}
+  .kitchen-alert-sub{font-size:11px;opacity:.7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sound-btn{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:9px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:10px}
+
 </style>
 </head>
 <body>
@@ -595,14 +611,85 @@ try{
 }catch(e){ console.error('Firebase init error', e); }
 
 // ── синхронізація замовлень між усіма пристроями через Firestore ──
+let ordersSyncStarted = false;
+let kitchenAudioCtx = null;
+let kitchenAlertTimer = null;
+
+function enableKitchenSound(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    if(!kitchenAudioCtx) kitchenAudioCtx = new AC();
+    if(kitchenAudioCtx.state === 'suspended') kitchenAudioCtx.resume();
+    showToast('🔔 Звук сповіщень кухні увімкнено');
+  }catch(e){ console.warn('Kitchen sound unavailable',e); }
+}
+
+function playKitchenSound(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    if(!kitchenAudioCtx) kitchenAudioCtx = new AC();
+    if(kitchenAudioCtx.state === 'suspended') return; // браузер потребує першої дії користувача
+    const now = kitchenAudioCtx.currentTime;
+    [0,0.22,0.44].forEach(function(offset){
+      const osc=kitchenAudioCtx.createOscillator();
+      const gain=kitchenAudioCtx.createGain();
+      osc.type='sine'; osc.frequency.value=880;
+      gain.gain.setValueAtTime(0.0001,now+offset);
+      gain.gain.exponentialRampToValueAtTime(0.22,now+offset+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001,now+offset+0.18);
+      osc.connect(gain); gain.connect(kitchenAudioCtx.destination);
+      osc.start(now+offset); osc.stop(now+offset+0.2);
+    });
+  }catch(e){ console.warn('Kitchen sound error',e); }
+}
+
+function showKitchenNewOrderAlert(order){
+  let el=document.getElementById('kitchenAlert');
+  if(!el){
+    el=document.createElement('div');
+    el.id='kitchenAlert'; el.className='kitchen-alert';
+    document.body.appendChild(el);
+    el.addEventListener('click',function(){
+      clearTimeout(kitchenAlertTimer); el.classList.remove('show');
+      if(currentMode!=='kitchen') setMode('kitchen'); else showTab('orders');
+    });
+  }
+  const count=(order.items||[]).reduce((sum,i)=>sum+(Number(i.qty)||0),0);
+  el.innerHTML='<div class="kitchen-alert-icon">🔔</div><div class="kitchen-alert-text"><div class="kitchen-alert-title">Нове замовлення №'+order.num+'</div><div class="kitchen-alert-sub">'+(order.name||'Клієнт')+' · '+count+' порц. · '+(order.total||0)+' грн</div></div><div>›</div>';
+  el.classList.add('show');
+  clearTimeout(kitchenAlertTimer);
+  kitchenAlertTimer=setTimeout(function(){el.classList.remove('show');},7000);
+  playKitchenSound();
+  if('Notification' in window && Notification.permission==='granted'){
+    try{ new Notification('ЇжКо — нове замовлення №'+order.num,{body:(order.name||'Клієнт')+' · '+(order.total||0)+' грн'}); }catch(e){}
+  }
+}
+
+function requestKitchenNotifications(){
+  enableKitchenSound();
+  if('Notification' in window && Notification.permission==='default') Notification.requestPermission().catch(()=>{});
+}
+
 function initOrdersSync(){
   if(!firebaseReady) return;
   db.collection('orders').orderBy('num','desc').onSnapshot(function(snap){
-    orders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    const incoming = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    if(ordersSyncStarted){
+      snap.docChanges().forEach(function(change){
+        if(change.type==='added' && change.doc.data().status==='new'){
+          const order={id:change.doc.id,...change.doc.data()};
+          if(currentMode==='kitchen' && kitchenUnlocked) showKitchenNewOrderAlert(order);
+        }
+      });
+    }
+    orders = incoming;
+    ordersSyncStarted = true;
     updateOrdersBadge();
     const panel = document.getElementById('panel-orders');
     if(panel && panel.classList.contains('active')) renderOrders();
-  }, function(err){ console.error('orders sync error', err); });
+  }, function(err){ console.error('orders sync error', err); showToast('❌ Помилка синхронізації замовлень'); });
 }
 function nextOrderNumber(){
   if(!firebaseReady) return Promise.resolve(++orderCounter);
@@ -1279,6 +1366,17 @@ const STATUS_MAP = {
 function renderOrders(){
   const filtered = currentFilter==='all' ? orders : orders.filter(o=>o.status===currentFilter);
   const el = document.getElementById('ordersContent');
+  if(currentMode==='kitchen' && kitchenUnlocked){
+    let sb=document.getElementById('kitchenSoundControl');
+    if(!sb){
+      sb=document.createElement('button'); sb.id='kitchenSoundControl'; sb.className='sound-btn';
+      sb.textContent='🔔 Увімкнути звук нових замовлень';
+      sb.onclick=requestKitchenNotifications;
+      el.parentNode.insertBefore(sb,el);
+    }
+  } else {
+    const sb=document.getElementById('kitchenSoundControl'); if(sb) sb.remove();
+  }
   if(!filtered.length){
     el.innerHTML='<div class="cart-empty"><div class="big">📋</div><p>Замовлень немає</p></div>';
     return;
@@ -1475,7 +1573,7 @@ function setMode(mode){
   document.getElementById('modeAdmin').classList.toggle('active', mode==='admin');
   // show/hide admin tab
   document.getElementById('tab-admin').style.display = mode==='admin' ? 'flex' : 'none';
-  if(mode==='kitchen'){ document.getElementById('ordersFilter').style.display=''; showTab('orders'); }
+  if(mode==='kitchen'){ document.getElementById('ordersFilter').style.display=''; showTab('orders'); requestKitchenNotifications(); }
   else if(mode==='admin') { renderAdmin(); showTab('admin'); }
   else showTab('menu');
 }
@@ -1498,89 +1596,48 @@ function updateKitchenButtonVisibility(){
   if(btn) btn.style.display = '';
 }
 
-function renderKitchenGate(){
-  document.getElementById('ordersFilter').style.display = 'none';
-  const cached = getKitchenAccessCache();
-  if(cached && cached.status === 'approved'){
-    // оптимістично відкриваємо на основі кешу, а в фоні перевіряємо, чи доступ ще дійсний
-    kitchenUnlocked = true;
-    currentMode = 'kitchen';
-    document.getElementById('modeKitchen').classList.add('active');
-    document.getElementById('modeClient').classList.remove('active');
-    document.getElementById('ordersFilter').style.display = '';
-    showTab('orders');
-    verifyKitchenAccess(cached.phone);
-    return;
-  }
-  document.getElementById('ordersContent').innerHTML =
-    '<div class="staff-gate-wrap">'
-    + '<div class="staff-gate-icon">👩‍🍳</div>'
-    + '<div class="staff-gate-title">Доступ для працівників кухні</div>'
-    + '<div class="staff-gate-sub">Вкажіть ім’я та номер телефону — адміністратор підтвердить доступ, і він відкриється на цьому пристрої.</div>'
-    + '<input type="text" id="staffName" class="staff-input" placeholder="Ваше ім’я" maxlength="40">'
-    + '<input type="tel" id="staffPhone" class="staff-input" placeholder="+380 XX XXX XX XX" maxlength="20">'
-    + '<button class="staff-btn" onclick="submitKitchenRequest()">Подати заявку</button>'
-    + '</div>';
+async function ensureKitchenAuth(){
+  if(!firebaseReady || !fbAuth) return null;
+  try{ if(fbAuth.currentUser) return fbAuth.currentUser; return (await fbAuth.signInAnonymously()).user; }
+  catch(e){ console.error(e); showToast('❌ Не вдалося підключити захищений доступ кухні'); return null; }
+}
+
+async function renderKitchenGate(){
+  document.getElementById('ordersFilter').style.display='none';
+  const user=await ensureKitchenAuth(); if(!user) return;
+  const cached=getKitchenAccessCache();
+  if(cached && cached.status==='approved' && await verifyKitchenAccess(cached.phone)) return;
+  document.getElementById('ordersContent').innerHTML='<div class="staff-gate-wrap">'
+    +'<div class="staff-gate-icon">👩‍🍳</div><div class="staff-gate-title">Доступ для працівників кухні</div>'
+    +'<div class="staff-gate-sub">Вкажіть ім’я та номер телефону — адміністратор підтвердить доступ, і він відкриється на цьому пристрої.</div>'
+    +'<input type="text" id="staffName" class="staff-input" placeholder="Ваше ім’я" maxlength="40">'
+    +'<input type="tel" id="staffPhone" class="staff-input" placeholder="+380 XX XXX XX XX" maxlength="20">'
+    +'<button class="staff-btn" onclick="submitKitchenRequest()">Подати заявку</button></div>';
 }
 
 async function verifyKitchenAccess(phone){
-  if(!firebaseReady || !db) return; // офлайн/не налаштовано — довіряємо кешу
+  if(!firebaseReady || !db || !fbAuth || !fbAuth.currentUser) return false;
   try{
-    const snap = await db.collection('kitchen_access').doc(phone).get();
-    if(!snap.exists || snap.data().status !== 'approved'){
-      clearKitchenAccessCache();
-      kitchenUnlocked = false;
-      updateKitchenButtonVisibility();
-      if(currentMode==='kitchen'){
-        currentMode='client';
-        document.getElementById('modeClient').classList.add('active');
-        document.getElementById('modeKitchen').classList.remove('active');
-        showTab('menu');
-        showToast('⛔ Доступ до кухні відкликано');
-      }
-    }
-  }catch(e){ /* немає з'єднання — залишаємо кешований доступ активним */ }
+    const snap=await db.collection('kitchen_access').doc(phone).get(); const data=snap.exists?snap.data():null;
+    const ok=!!data && data.status==='approved' && data.uid===fbAuth.currentUser.uid;
+    if(!ok){ clearKitchenAccessCache(); kitchenUnlocked=false; updateKitchenButtonVisibility(); return false; }
+    kitchenUnlocked=true; currentMode='kitchen'; document.getElementById('modeKitchen').classList.add('active');
+    document.getElementById('modeClient').classList.remove('active'); document.getElementById('ordersFilter').style.display=''; showTab('orders'); requestKitchenNotifications(); return true;
+  }catch(e){ console.error(e); return false; }
 }
 
 async function submitKitchenRequest(){
-  const nameInp  = document.getElementById('staffName');
-  const phoneInp = document.getElementById('staffPhone');
-  const name = (nameInp?.value||'').trim();
-  const phoneRaw = (phoneInp?.value||'').trim();
-  const phone = normalizePhone(phoneRaw);
-  if(phone.length < 9){ showToast('❌ Введіть коректний номер телефону'); return; }
-  if(!firebaseReady || !db){ showToast('⚠️ Сервіс реєстрації ще не підключено. Зверніться до адміністратора.'); return; }
+  const name=(document.getElementById('staffName')?.value||'').trim(), phoneRaw=(document.getElementById('staffPhone')?.value||'').trim(), phone=normalizePhone(phoneRaw);
+  if(!name){showToast('❌ Введіть ім’я');return;} if(phone.length<9){showToast('❌ Введіть коректний номер телефону');return;}
+  if(!firebaseReady||!db||!fbAuth){showToast('⚠️ Firebase не підключено');return;}
   try{
-    const docRef = db.collection('kitchen_access').doc(phone);
-    const snap = await docRef.get();
-    if(snap.exists){
-      const data = snap.data();
-      if(data.status==='approved'){
-        setKitchenAccessCache({phone, status:'approved'});
-        updateKitchenButtonVisibility();
-        kitchenUnlocked = true;
-        currentMode = 'kitchen';
-        document.getElementById('modeKitchen').classList.add('active');
-        document.getElementById('modeClient').classList.remove('active');
-        document.getElementById('ordersFilter').style.display = '';
-        showTab('orders');
-        showToast('✅ Доступ підтверджено!');
-      } else if(data.status==='pending'){
-        renderKitchenStatus(phone, 'pending');
-      } else {
-        renderKitchenStatus(phone, 'rejected');
-      }
-    } else {
-      await docRef.set({
-        phone: phoneRaw, name: name,
-        status: 'pending',
-        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      renderKitchenStatus(phone, 'pending');
-    }
-  } catch(e){
-    showToast('❌ Помилка з’єднання. Спробуйте ще раз.');
-  }
+    const user=await ensureKitchenAuth(); if(!user)return; const docRef=db.collection('kitchen_access').doc(phone), snap=await docRef.get();
+    if(snap.exists){ const data=snap.data();
+      if(data.uid && data.uid!==user.uid){showToast('⛔ Цей номер уже прив’язаний до іншого пристрою');return;}
+      if(data.status==='approved'){setKitchenAccessCache({phone,status:'approved'});await verifyKitchenAccess(phone);if(kitchenUnlocked)showToast('✅ Доступ підтверджено!');}
+      else if(data.status==='pending')renderKitchenStatus(phone,'pending'); else renderKitchenStatus(phone,'rejected');
+    } else { await docRef.set({phone:phoneRaw,name:name,uid:user.uid,status:'pending',requestedAt:firebase.firestore.FieldValue.serverTimestamp()}); renderKitchenStatus(phone,'pending'); }
+  }catch(e){console.error(e);showToast('❌ Помилка з’єднання. Спробуйте ще раз.');}
 }
 
 function renderKitchenStatus(phone, status){
@@ -1672,37 +1729,12 @@ let staffAuthed = false;
 // ── Єдиний onAuthStateChanged: обробляє і адміна і кухню ──
 if(firebaseReady && fbAuth){
   fbAuth.onAuthStateChanged(function(user){
-    staffAuthed = !!user;
-
-    if(user){
-      // Перевіряємо чи це адмін-акаунт через custom claim або email whitelist
-      // Простий варіант: якщо увійшов — це адмін (email/пароль у Firebase Authentication)
-      if(!adminUnlocked){
-        adminUnlocked = true;
-        currentMode = 'admin';
-        document.getElementById('modeAdmin').classList.add('active');
-        document.getElementById('modeClient').classList.remove('active');
-        document.getElementById('modeKitchen').classList.remove('active');
-        document.getElementById('tab-admin').style.display = 'flex';
-        renderAdmin();
-        showTab('admin');
-        showToast('✅ Вхід виконано');
-      } else {
-        // вже в адмінці — просто перемалюємо (для секції кухні)
-        if(currentMode==='admin') renderAdmin();
-      }
-    } else {
-      // вийшли з Firebase — якщо були в адмінці, закриваємо
-      if(adminUnlocked){
-        adminUnlocked = false;
-        currentMode = 'client';
-        document.getElementById('modeClient').classList.add('active');
-        document.getElementById('modeAdmin').classList.remove('active');
-        document.getElementById('modeKitchen').classList.remove('active');
-        document.getElementById('tab-admin').style.display = 'none';
-        showTab('menu');
-      }
-    }
+    const provider=user && user.providerData && user.providerData[0] ? user.providerData[0].providerId : '';
+    const isAdminSession=!!user && provider==='password'; staffAuthed=isAdminSession;
+    if(isAdminSession){
+      if(!adminUnlocked){ adminUnlocked=true; currentMode='admin'; document.getElementById('modeAdmin').classList.add('active'); document.getElementById('modeClient').classList.remove('active'); document.getElementById('modeKitchen').classList.remove('active'); document.getElementById('tab-admin').style.display='flex'; renderAdmin(); showTab('admin'); showToast('✅ Вхід виконано'); }
+      else if(currentMode==='admin') renderAdmin();
+    }else if(!user && adminUnlocked){ adminUnlocked=false; currentMode='client'; document.getElementById('modeClient').classList.add('active'); document.getElementById('modeAdmin').classList.remove('active'); document.getElementById('modeKitchen').classList.remove('active'); document.getElementById('tab-admin').style.display='none'; showTab('menu'); }
   });
 }
 
@@ -1768,10 +1800,12 @@ async function loadKitchenRequests(){
 
 async function staffSetStatus(phoneId, status){
   try{
-    await db.collection('kitchen_access').doc(phoneId).update({status});
-    showToast(status==='approved' ? '✅ Доступ схвалено' : '⛔ Доступ скасовано/відхилено');
-    loadKitchenRequests();
-  }catch(e){ showToast('❌ Помилка. Перевірте правила безпеки Firestore.'); }
+    const ref=db.collection('kitchen_access').doc(phoneId), snap=await ref.get(); if(!snap.exists){showToast('❌ Заявку не знайдено');return;}
+    const data=snap.data(); if(status==='approved'&&!data.uid){showToast('⚠️ Стара заявка без UID. Працівник має подати заявку ще раз.');return;}
+    await ref.update({status});
+    if(data.uid){const uref=db.collection('kitchen_users').doc(data.uid); if(status==='approved') await uref.set({phone:phoneId,status:'approved',approvedAt:firebase.firestore.FieldValue.serverTimestamp()}); else await uref.delete().catch(()=>{});}
+    showToast(status==='approved'?'✅ Доступ схвалено':'⛔ Доступ скасовано/відхилено'); loadKitchenRequests();
+  }catch(e){console.error(e);showToast('❌ Помилка. Перевірте правила безпеки Firestore.');}
 }
 
 async function adminSignIn(){
