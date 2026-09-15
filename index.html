@@ -358,6 +358,79 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   #app{max-width:480px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,0.12)}
   body{background:#E0DDD8;display:flex;justify-content:center}
 }
+
+  .card-img-svg{width:100%;height:90px;display:block;overflow:hidden;background:linear-gradient(145deg,#1a1a2e,#2d1b10)}
+  .card-img-svg svg{width:100%;height:100%;display:block}
+  .ci-img-svg{background:linear-gradient(145deg,#1a1a2e,#2d1b10)!important}
+  .ci-img-svg svg{width:100%;height:100%;display:block}
+  .modal-dish-svg{width:100%;height:200px;overflow:hidden;background:linear-gradient(145deg,#1a1a2e,#2d1b10);display:flex;align-items:center;justify-content:center}
+  .modal-dish-svg svg{width:100%;height:100%;display:block}
+
+  /* ── ADMIN PANEL ── */
+  .admin-panel-wrap{padding:14px}
+  .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .admin-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--dark)}
+  .admin-pin-wrap{background:var(--card);border-radius:var(--r);padding:20px;margin-bottom:14px;box-shadow:var(--sh);text-align:center}
+  .admin-pin-wrap p{font-size:13px;color:var(--soft);margin-bottom:12px}
+  .admin-pin-input{
+    width:160px;border:2px solid var(--border);border-radius:10px;
+    padding:12px;font-size:22px;font-weight:800;text-align:center;
+    letter-spacing:6px;font-family:'Inter',sans-serif;
+    background:var(--bg);color:var(--dark);outline:none;
+  }
+  .admin-pin-input:focus{border-color:var(--accent)}
+  .admin-pin-btn{
+    display:block;width:100%;margin-top:12px;
+    background:var(--accent);color:white;border:none;border-radius:10px;
+    padding:12px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
+  }
+  .admin-section-label{
+    font-size:11px;font-weight:800;letter-spacing:0.7px;text-transform:uppercase;
+    color:var(--soft);margin:14px 0 8px;
+  }
+  .admin-dish-row{
+    background:var(--card);border-radius:12px;box-shadow:var(--sh);
+    padding:11px 14px;margin-bottom:8px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .admin-dish-svg{width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0;background:linear-gradient(145deg,#1a1a2e,#2d1b10)}
+  .admin-dish-svg svg{width:100%;height:100%;display:block}
+  .admin-dish-info{flex:1;min-width:0}
+  .admin-dish-name{font-size:13px;font-weight:700;color:var(--text)}
+  .admin-dish-cat{font-size:11px;color:var(--soft)}
+  .admin-qty-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .admin-qty-btn{
+    border:1.5px solid var(--border);background:var(--bg);
+    border-radius:50%;width:32px;height:32px;font-size:16px;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dark);
+    transition:all 0.15s;
+  }
+  .admin-qty-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .admin-qty-val{
+    font-size:16px;font-weight:800;min-width:32px;text-align:center;color:var(--dark);
+  }
+  .admin-qty-val.zero{color:#ccc}
+  .admin-dish-row.sold-out{opacity:0.45}
+  .sold-out-badge{
+    font-size:10px;font-weight:700;background:#FEE2E2;color:#991B1B;
+    border-radius:5px;padding:2px 7px;flex-shrink:0;
+  }
+  .avail-badge{
+    font-size:10px;font-weight:700;background:#D1FAE5;color:#065F46;
+    border-radius:5px;padding:2px 7px;flex-shrink:0;
+  }
+  .admin-save-btn{
+    width:100%;background:var(--green);color:white;border:none;
+    border-radius:var(--r);padding:14px;font-family:'Inter',sans-serif;
+    font-size:14px;font-weight:700;cursor:pointer;margin:12px 0 32px;
+  }
+  /* ingredient list for clients */
+  .ingr-list{margin:10px 0 6px;display:flex;flex-wrap:wrap;gap:6px}
+  .ingr-chip{
+    background:var(--bg);border:1px solid var(--border);
+    border-radius:20px;padding:4px 10px;
+    font-size:11px;color:var(--text-mid);font-weight:500;
+  }
 </style>
 </head>
 <body>
@@ -384,6 +457,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   <div class="mode-toggle">
     <button class="mode-btn active" id="modeClient" onclick="setMode('client')">Клієнт</button>
     <button class="mode-btn" id="modeKitchen" onclick="setMode('kitchen')">Кухня</button>
+    <button class="mode-btn" id="modeAdmin" onclick="setMode('admin')" title="Адмін">⚙️</button>
   </div>
 </div>
 
@@ -403,6 +477,9 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   <button class="tab-btn" onclick="showTab('stats')" id="tab-stats">
     <span class="ti">📊</span>Звіт
   </button>
+  <button class="tab-btn" onclick="showTab('admin')" id="tab-admin" style="display:none">
+    <span class="ti">⚙️</span>Адмін
+  </button>
 </nav>
 
 <!-- CONTENT -->
@@ -420,6 +497,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     <div id="ordersContent"></div>
   </div>
   <div class="panel" id="panel-stats"><div id="statsContent"></div></div>
+  <div class="panel" id="panel-admin"><div id="adminContent"></div></div>
 </div>
 </div>
 
@@ -450,11 +528,36 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 
 <script>
 // ══ MENU DATA ══════════════════════════════════════════════
+const DISH_SVGS = {
+  1: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#2C1810"/><ellipse cx="100" cy="110" rx="85" ry="35" fill="#5C2020"/><ellipse cx="100" cy="100" rx="80" ry="32" fill="#8B1A1A"/><ellipse cx="100" cy="92" rx="74" ry="28" fill="#C0392B"/><ellipse cx="100" cy="88" rx="68" ry="22" fill="#D44000" opacity="0.3"/><ellipse cx="72" cy="82" rx="14" ry="9" fill="#8B0000" opacity="0.6"/><ellipse cx="125" cy="86" rx="10" ry="7" fill="#7B1818" opacity="0.5"/><ellipse cx="62" cy="88" rx="18" ry="11" fill="#FFFDE7" opacity="0.9"/><path d="M55 82 Q62 70 70 82 Q62 94 55 82Z" fill="#FFFFFF" opacity="0.95"/><circle cx="70" cy="74" r="3" fill="#4CAF50"/><circle cx="58" cy="70" r="2" fill="#4CAF50"/><circle cx="78" cy="76" r="2.5" fill="#388E3C"/><ellipse cx="100" cy="110" rx="85" ry="12" fill="#3D0A0A" opacity="0.5"/><rect x="15" y="118" width="170" height="28" rx="10" fill="#F5E6C8"/><rect x="12" y="114" width="176" height="10" rx="5" fill="#E8D5B0"/></svg>',
+  2: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#2C1808"/><ellipse cx="100" cy="108" rx="83" ry="34" fill="#6B2A00"/><ellipse cx="100" cy="98" rx="78" ry="30" fill="#A03510"/><ellipse cx="100" cy="90" rx="72" ry="26" fill="#C04510"/><ellipse cx="80" cy="84" rx="14" ry="7" fill="#8B2200" opacity="0.8"/><ellipse cx="120" cy="88" rx="10" ry="6" fill="#F4A460" opacity="0.85"/><circle cx="72" cy="80" r="6" fill="#DEB887" opacity="0.95"/><circle cx="110" cy="82" r="5" fill="#D2691E" opacity="0.9"/><circle cx="90" cy="76" r="4" fill="#8B4513"/><circle cx="132" cy="86" r="3" fill="#90EE90" opacity="0.95"/><circle cx="65" cy="90" r="3" fill="#90EE90" opacity="0.9"/><circle cx="95" cy="72" r="3.5" fill="#FF6B35" opacity="0.8"/><rect x="15" y="118" width="170" height="28" rx="10" fill="#F5E6C8"/><rect x="12" y="114" width="176" height="10" rx="5" fill="#E8D5B0"/></svg>',
+  3: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#1A2A0A"/><ellipse cx="100" cy="108" rx="83" ry="34" fill="#3A4E1A"/><ellipse cx="100" cy="98" rx="78" ry="30" fill="#4D6E25"/><ellipse cx="100" cy="90" rx="72" ry="26" fill="#5D8030"/><circle cx="65" cy="82" r="8" fill="#7CB342" opacity="0.95"/><circle cx="88" cy="76" r="7" fill="#8BC34A" opacity="0.95"/><circle cx="112" cy="82" r="8" fill="#7CB342" opacity="0.9"/><circle cx="78" cy="92" r="6" fill="#689F38" opacity="0.85"/><circle cx="105" cy="90" r="7" fill="#8BC34A" opacity="0.95"/><circle cx="128" cy="80" r="6" fill="#7CB342"/><circle cx="135" cy="88" r="5" fill="#8BC34A" opacity="0.8"/><circle cx="55" cy="90" r="5" fill="#689F38" opacity="0.85"/><ellipse cx="88" cy="84" rx="10" ry="5" fill="#F5DEB3" opacity="0.75"/><rect x="15" y="118" width="170" height="28" rx="10" fill="#F5E6C8"/><rect x="12" y="114" width="176" height="10" rx="5" fill="#E8D5B0"/></svg>',
+  4: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#1E1208"/><ellipse cx="100" cy="108" rx="83" ry="34" fill="#5C3820"/><ellipse cx="100" cy="98" rx="78" ry="30" fill="#8B5E3C"/><ellipse cx="100" cy="90" rx="72" ry="26" fill="#C8A882"/><ellipse cx="100" cy="88" rx="66" ry="20" fill="#D4B896" opacity="0.7"/><path d="M62 82 Q75 62 88 82 Z" fill="#8B4513"/><ellipse cx="75" cy="80" rx="12" ry="4" fill="#6B3410"/><path d="M108 86 Q120 66 132 86 Z" fill="#795548"/><ellipse cx="120" cy="84" rx="11" ry="4" fill="#5D2E0A"/><ellipse cx="95" cy="76" rx="18" ry="8" fill="#A0522D" opacity="0.6"/><ellipse cx="60" cy="92" rx="8" ry="4" fill="#8B6914" opacity="0.7"/><ellipse cx="95" cy="98" rx="18" ry="7" fill="#FFFDE7" opacity="0.65"/><circle cx="130" cy="78" r="4" fill="#4CAF50" opacity="0.85"/><circle cx="65" cy="96" r="3" fill="#4CAF50" opacity="0.85"/><rect x="15" y="118" width="170" height="28" rx="10" fill="#F5E6C8"/><rect x="12" y="114" width="176" height="10" rx="5" fill="#E8D5B0"/></svg>',
+  5: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#1A1000"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 108 Q28 68 100 64 Q172 68 178 108 Q172 138 100 134 Q28 138 22 108Z" fill="#C8903C"/><path d="M28 100 Q36 72 100 68 Q164 72 172 100" fill="#D4A852" opacity="0.5"/><path d="M35 95 Q52 72 80 78 Q100 84 122 70 Q145 60 158 80" fill="none" stroke="#8B5E20" stroke-width="2.5"/><path d="M30 112 Q52 104 80 108 Q100 112 122 104 Q144 98 168 108" fill="none" stroke="#7A5018" stroke-width="1.8" opacity="0.65"/><ellipse cx="68" cy="118" rx="18" ry="7" fill="#C8963E" opacity="0.6"/><ellipse cx="135" cy="112" rx="14" ry="6" fill="#D4A054" opacity="0.5"/><path d="M90 72 Q96 58 104 52 Q112 58 110 72" fill="#F0C040" opacity="0.85"/><path d="M93 70 Q100 58 107 70" fill="none" stroke="#DAA520" stroke-width="2"/><circle cx="100" cy="50" r="5" fill="#FF8F00" opacity="0.8"/></svg>',
+  6: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#0A1520"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 108 Q28 72 100 68 Q172 72 178 108 Q172 134 100 132 Q28 134 22 108Z" fill="#D4C4A0"/><path d="M28 102 Q36 76 100 72 Q164 76 172 102" fill="#E8D8B8" opacity="0.65"/><path d="M38 95 Q55 76 80 80 Q100 84 122 76 Q145 70 158 88" fill="none" stroke="#8B7355" stroke-width="2"/><ellipse cx="80" cy="78" rx="28" ry="10" fill="#E8C830" opacity="0.45"/><ellipse cx="125" cy="74" rx="18" ry="7" fill="#D8B820" opacity="0.4"/><path d="M35 112 Q60 118 100 114 Q140 118 165 112" fill="none" stroke="#7A6340" stroke-width="1.5" opacity="0.5"/><circle cx="55" cy="105" r="6" fill="#FF6B35" opacity="0.75"/><circle cx="148" cy="102" r="6" fill="#FF6B35" opacity="0.75"/><circle cx="100" cy="124" r="5" fill="#FF6B35" opacity="0.65"/><circle cx="88" cy="120" r="4" fill="#4CAF50" opacity="0.85"/><circle cx="112" cy="120" r="4" fill="#4CAF50" opacity="0.85"/><circle cx="100" cy="118" r="3" fill="#66BB6A" opacity="0.75"/></svg>',
+  7: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#180800"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q26 72 100 68 Q174 72 178 108 Q174 136 100 132 Q26 136 22 108Z" fill="#C0903C"/><path d="M28 100 Q34 76 100 72 Q166 76 172 100" fill="#D4A050" opacity="0.5"/><path d="M32 96 Q50 76 78 80 Q100 84 125 74 Q148 68 166 84" fill="none" stroke="#8B5C20" stroke-width="2.5"/><path d="M30 112 Q50 106 78 110 Q100 114 125 106 Q148 100 168 110" fill="none" stroke="#7A4C18" stroke-width="1.8" opacity="0.65"/><ellipse cx="65" cy="82" rx="26" ry="10" fill="#FFFDE7" opacity="0.55"/><ellipse cx="140" cy="78" rx="18" ry="7" fill="#FFFDE7" opacity="0.45"/><ellipse cx="72" cy="120" rx="20" ry="8" fill="#C8963E" opacity="0.45"/><ellipse cx="135" cy="116" rx="16" ry="6" fill="#D4A054" opacity="0.4"/></svg>',
+  8: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#180A00"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><ellipse cx="82" cy="105" rx="52" ry="30" fill="#7A3510"/><ellipse cx="80" cy="102" rx="50" ry="28" fill="#9B4520"/><ellipse cx="80" cy="98" rx="46" ry="25" fill="#C05A28"/><path d="M34 98 Q55 80 82 84 Q100 88 115 80" fill="none" stroke="#8B3010" stroke-width="2"/><path d="M36 108 Q58 100 82 104 Q100 108 116 100" fill="none" stroke="#6B2010" stroke-width="1.5" opacity="0.6"/><ellipse cx="140" cy="112" rx="28" ry="14" fill="#9A7020" opacity="0.6"/><path d="M114 114 Q128 100 150 106 Q160 112 155 122 Q140 128 120 122Z" fill="#B8902E" opacity="0.75"/><ellipse cx="70" cy="84" rx="10" ry="5" fill="#CD853F" opacity="0.5"/><ellipse cx="95" cy="90" rx="8" ry="4" fill="#D4A060" opacity="0.45"/></svg>',
+  9: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#100808"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q24 72 98 68 Q172 72 178 108 Q172 136 98 132 Q24 136 22 108Z" fill="#5A1212"/><path d="M28 100 Q32 74 98 70 Q164 74 172 100" fill="#7A1818" opacity="0.65"/><path d="M32 94 Q52 76 78 80 Q96 84 118 74 Q140 66 160 80" fill="none" stroke="#3A0808" stroke-width="2.5"/><circle cx="55" cy="86" r="9" fill="#C0392B" opacity="0.95"/><circle cx="82" cy="78" r="8" fill="#C0392B" opacity="0.9"/><circle cx="110" cy="84" r="9" fill="#B22222"/><circle cx="138" cy="78" r="7" fill="#C0392B" opacity="0.9"/><circle cx="66" cy="100" r="7" fill="#8B0000" opacity="0.75"/><circle cx="120" cy="98" r="8" fill="#C0392B" opacity="0.85"/><circle cx="55" cy="86" r="3.5" fill="#E74C3C" opacity="0.55"/><circle cx="110" cy="84" r="3" fill="#E74C3C" opacity="0.5"/><circle cx="148" cy="90" r="5" fill="#8B0000" opacity="0.65"/></svg>',
+  10: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#180800"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 112 Q25 88 100 85 Q175 88 178 112 Q175 134 100 130 Q25 134 22 112Z" fill="#B0350A" opacity="0.95"/><path d="M28 106 Q35 88 100 85 Q165 88 172 106" fill="#C0450C" opacity="0.5"/><ellipse cx="60" cy="102" rx="28" ry="22" fill="#7A3510"/><ellipse cx="60" cy="98" rx="26" ry="20" fill="#9B4520"/><ellipse cx="60" cy="94" rx="23" ry="17" fill="#C05528"/><path d="M36 94 Q50 80 74 86 Q86 92 82 102" fill="none" stroke="#6B3010" stroke-width="2"/><ellipse cx="108" cy="106" rx="28" ry="22" fill="#7A3510"/><ellipse cx="108" cy="102" rx="26" ry="20" fill="#9B4520"/><ellipse cx="108" cy="98" rx="23" ry="17" fill="#C05528"/><path d="M84 98 Q98 84 122 90 Q134 96 130 106" fill="none" stroke="#6B3010" stroke-width="2"/><ellipse cx="152" cy="100" rx="24" ry="19" fill="#7A3510"/><ellipse cx="152" cy="96" rx="22" ry="17" fill="#9B4520"/><circle cx="80" cy="126" r="4" fill="#4CAF50" opacity="0.85"/><circle cx="100" cy="128" r="3.5" fill="#4CAF50" opacity="0.85"/><circle cx="120" cy="126" r="4" fill="#4CAF50" opacity="0.8"/></svg>',
+  11: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#1A1200"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 110 Q22 85 100 82 Q178 85 178 110 Q178 132 100 130 Q22 132 22 110Z" fill="#FFF8DC"/><path d="M28 106 Q35 88 100 85 Q165 88 172 106" fill="#FFFDE7" opacity="0.65"/><path d="M32 100 Q52 88 80 92 Q100 96 128 88 Q152 84 168 96" fill="none" stroke="#F0D890" stroke-width="3"/><path d="M30 114 Q52 108 80 112 Q100 116 128 108 Q152 104 170 112" fill="none" stroke="#EDD070" stroke-width="2.5" opacity="0.75"/><ellipse cx="80" cy="95" rx="28" ry="10" fill="#FFFDE7" opacity="0.55"/><ellipse cx="135" cy="100" rx="20" ry="8" fill="#FFFDE7" opacity="0.45"/><circle cx="95" cy="88" r="10" fill="#FFD700" opacity="0.78"/><circle cx="95" cy="87" r="6" fill="#FFF9C4" opacity="0.88"/><circle cx="68" cy="122" r="4" fill="#4CAF50" opacity="0.78"/><circle cx="82" cy="124" r="3.5" fill="#4CAF50" opacity="0.75"/><circle cx="96" cy="124" r="4" fill="#388E3C" opacity="0.7"/></svg>',
+  12: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#180E00"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 110 Q22 85 100 82 Q178 85 178 110 Q178 132 100 130 Q22 132 22 110Z" fill="#7A5A10"/><path d="M28 106 Q35 88 100 85 Q165 88 172 106" fill="#8A6A18" opacity="0.5"/><ellipse cx="50" cy="96" rx="8" ry="4.5" fill="#5A3C08" opacity="0.85"/><ellipse cx="72" cy="90" rx="7" ry="4" fill="#6A4C10" opacity="0.85"/><ellipse cx="95" cy="98" rx="8" ry="4.5" fill="#5A3C08" opacity="0.9"/><ellipse cx="118" cy="92" rx="7" ry="4" fill="#6A4C10" opacity="0.85"/><ellipse cx="140" cy="100" rx="8" ry="4.5" fill="#5A3C08" opacity="0.9"/><ellipse cx="158" cy="94" rx="6" ry="3.5" fill="#6A4C10" opacity="0.75"/><ellipse cx="58" cy="112" rx="7" ry="4" fill="#5A3C08" opacity="0.78"/><ellipse cx="82" cy="118" rx="8" ry="4.5" fill="#6A4C10" opacity="0.82"/><ellipse cx="110" cy="116" rx="7" ry="4" fill="#5A3c08" opacity="0.78"/><ellipse cx="80" cy="86" rx="22" ry="8" fill="#C8A020" opacity="0.55"/><ellipse cx="135" cy="89" rx="15" ry="6" fill="#B89018" opacity="0.45"/></svg>',
+  13: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#141008"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 110 Q22 85 100 82 Q178 85 178 110 Q178 132 100 130 Q22 132 22 110Z" fill="#FFF8C4"/><ellipse cx="48" cy="96" rx="6" ry="3" fill="#FFFDE7" opacity="0.95"/><ellipse cx="64" cy="90" rx="6" ry="3" fill="#FFFDE7" opacity="0.95"/><ellipse cx="82" cy="98" rx="6" ry="3" fill="#FFFDE7" opacity="0.95"/><ellipse cx="100" cy="92" rx="6" ry="3" fill="#FFFDE7" opacity="0.95"/><ellipse cx="118" cy="98" rx="6" ry="3" fill="#FFFDE7" opacity="0.9"/><ellipse cx="138" cy="92" rx="6" ry="3" fill="#FFFDE7" opacity="0.9"/><ellipse cx="156" cy="98" rx="5" ry="3" fill="#FFFDE7" opacity="0.85"/><ellipse cx="56" cy="112" rx="6" ry="3" fill="#FFFDE7" opacity="0.88"/><ellipse cx="76" cy="118" rx="6" ry="3" fill="#FFFDE7" opacity="0.88"/><ellipse cx="100" cy="120" rx="6" ry="3" fill="#FFFDE7" opacity="0.85"/><ellipse cx="124" cy="118" rx="6" ry="3" fill="#FFFDE7" opacity="0.85"/><ellipse cx="144" cy="112" rx="6" ry="3" fill="#FFFDE7" opacity="0.88"/><ellipse cx="80" cy="86" rx="10" ry="5" fill="#FF8F00" opacity="0.75"/><ellipse cx="125" cy="88" rx="8" ry="4" fill="#E65100" opacity="0.7"/><ellipse cx="60" cy="106" rx="7" ry="3.5" fill="#4CAF50" opacity="0.75"/><ellipse cx="140" cy="108" rx="6" ry="3" fill="#4CAF50" opacity="0.7"/></svg>',
+  14: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#0A1400"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 110 Q22 85 100 82 Q178 85 178 110 Q178 132 100 130 Q22 132 22 110Z" fill="#7AB040" opacity="0.92"/><path d="M28 104 Q38 86 75 88 Q100 90 130 84 Q155 80 172 96" fill="#5A8820" opacity="0.5"/><circle cx="48" cy="96" r="9" fill="#7CB342" opacity="0.95"/><circle cx="72" cy="88" r="8" fill="#8BC34A"/><circle cx="96" cy="96" r="9" fill="#7CB342" opacity="0.95"/><circle cx="120" cy="89" r="8" fill="#8BC34A"/><circle cx="144" cy="97" r="8" fill="#7CB342" opacity="0.9"/><circle cx="162" cy="90" r="7" fill="#8BC34A" opacity="0.85"/><circle cx="58" cy="112" r="8" fill="#689F38" opacity="0.85"/><circle cx="82" cy="118" r="9" fill="#7CB342" opacity="0.9"/><circle cx="108" cy="116" r="8" fill="#689F38" opacity="0.9"/><circle cx="134" cy="114" r="8" fill="#7CB342" opacity="0.85"/><circle cx="155" cy="110" r="7" fill="#8BC34A" opacity="0.8"/><circle cx="48" cy="96" r="4" fill="#AED581" opacity="0.55"/><circle cx="96" cy="96" r="4" fill="#AED581" opacity="0.5"/></svg>',
+  15: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#0A1A06"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q22 87 100 84 Q178 87 178 108 Q178 130 100 128 Q22 130 22 108Z" fill="#DCEDC8"/><path d="M30 102 Q48 88 75 92 Q98 96 125 88 Q148 82 168 96" fill="none" stroke="#AED581" stroke-width="2.5"/><path d="M28 114 Q50 108 78 112 Q100 116 128 108 Q150 104 170 112" fill="none" stroke="#9CCC65" stroke-width="2" opacity="0.7"/><ellipse cx="62" cy="98" rx="16" ry="8" fill="#C5E1A5" opacity="0.78"/><ellipse cx="130" cy="104" rx="14" ry="7" fill="#AED581" opacity="0.68"/><ellipse cx="88" cy="90" rx="12" ry="6" fill="#FFF176" opacity="0.78"/><ellipse cx="118" cy="92" rx="10" ry="5" fill="#FFE082" opacity="0.72"/><ellipse cx="52" cy="110" rx="10" ry="5" fill="#FF8A65" opacity="0.72"/><circle cx="82" cy="120" r="6" fill="#EF5350" opacity="0.75"/><circle cx="138" cy="118" r="5.5" fill="#E53935" opacity="0.7"/><circle cx="105" cy="122" r="5" fill="#EF5350" opacity="0.68"/></svg>',
+  16: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#180408"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q22 87 100 84 Q178 87 178 108 Q178 130 100 128 Q22 130 22 108Z" fill="#B71C1C" opacity="0.88"/><path d="M30 102 Q48 88 78 92 Q100 96 128 88 Q150 82 168 96" fill="none" stroke="#7B1818" stroke-width="2.5"/><ellipse cx="62" cy="100" rx="16" ry="8" fill="#8B1010" opacity="0.75"/><ellipse cx="130" cy="106" rx="14" ry="7" fill="#9B1818" opacity="0.68"/><ellipse cx="95" cy="92" rx="12" ry="6" fill="#921515" opacity="0.6"/><ellipse cx="55" cy="116" rx="24" ry="9" fill="#FFF9C4" opacity="0.82"/><ellipse cx="56" cy="114" rx="20" ry="7" fill="#FFFDE7" opacity="0.75"/><circle cx="120" cy="94" r="4.5" fill="#4A1818" opacity="0.7"/><circle cx="95" cy="100" r="5" fill="#5A2020" opacity="0.75"/><circle cx="148" cy="98" r="4" fill="#4A1818" opacity="0.65"/><ellipse cx="140" cy="120" rx="12" ry="5" fill="#FFFDE7" opacity="0.65"/></svg>',
+  17: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#081208"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q22 87 100 84 Q178 87 178 108 Q178 130 100 128 Q22 130 22 108Z" fill="#F1F8E9"/><ellipse cx="62" cy="98" rx="28" ry="14" fill="#C8E6C9" opacity="0.85"/><ellipse cx="60" cy="96" rx="25" ry="12" fill="#A5D6A7" opacity="0.78"/><ellipse cx="115" cy="104" rx="32" ry="16" fill="#E53935" opacity="0.82"/><ellipse cx="113" cy="102" rx="28" ry="14" fill="#EF5350" opacity="0.75"/><ellipse cx="88" cy="116" rx="20" ry="10" fill="#FF7043" opacity="0.68"/><ellipse cx="152" cy="95" rx="20" ry="10" fill="#E53935" opacity="0.68"/><path d="M30 108 Q55 102 80 106 Q100 110 125 104" fill="none" stroke="#6D4C41" stroke-width="1.2" opacity="0.5"/><circle cx="72" cy="88" r="5" fill="#4CAF50" opacity="0.88"/><circle cx="140" cy="118" r="4.5" fill="#4CAF50" opacity="0.85"/><circle cx="105" cy="86" r="4" fill="#4CAF50" opacity="0.78"/></svg>',
+  18: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#120406"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q22 87 100 84 Q178 87 178 108 Q178 130 100 128 Q22 130 22 108Z" fill="#C62828" opacity="0.82"/><rect x="32" y="90" width="16" height="16" rx="3.5" fill="#8B1A1A" opacity="0.88"/><rect x="54" y="96" width="14" height="14" rx="3" fill="#C62828" opacity="0.78"/><rect x="76" y="88" width="16" height="16" rx="3.5" fill="#FFF9C4" opacity="0.92"/><rect x="100" y="94" width="14" height="14" rx="3" fill="#FF8F00" opacity="0.88"/><rect x="122" y="89" width="16" height="16" rx="3.5" fill="#C62828" opacity="0.8"/><rect x="148" y="92" width="14" height="14" rx="3" fill="#FFF9C4" opacity="0.88"/><rect x="40" y="110" width="14" height="14" rx="3" fill="#FFF9C4" opacity="0.85"/><rect x="65" y="113" width="16" height="14" rx="3.5" fill="#8B1A1A" opacity="0.82"/><rect x="92" y="112" width="16" height="14" rx="3.5" fill="#FF8F00" opacity="0.8"/><rect x="118" y="110" width="14" height="14" rx="3" fill="#FFF9C4" opacity="0.85"/><rect x="142" y="112" width="14" height="14" rx="3" fill="#C62828" opacity="0.78"/><circle cx="80" cy="108" r="6" fill="#4CAF50" opacity="0.88"/><circle cx="108" cy="106" r="5.5" fill="#4CAF50" opacity="0.82"/><circle cx="134" cy="108" r="5" fill="#4CAF50" opacity="0.85"/></svg>',
+  19: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#080F04"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q22 87 100 84 Q178 87 178 108 Q178 130 100 128 Q22 130 22 108Z" fill="#E8F5E9"/><path d="M28 102 Q48 90 78 94 Q100 98 128 90 Q152 84 170 98" fill="none" stroke="#A5D6A7" stroke-width="3"/><ellipse cx="62" cy="100" rx="20" ry="9" fill="#F5DEB3" opacity="0.88"/><ellipse cx="60" cy="98" rx="18" ry="8" fill="#DEB887" opacity="0.78"/><ellipse cx="130" cy="106" rx="20" ry="9" fill="#F5DEB3" opacity="0.82"/><ellipse cx="132" cy="104" rx="16" ry="7" fill="#C8A882" opacity="0.75"/><ellipse cx="96" cy="91" rx="14" ry="6" fill="#C8E6C9" opacity="0.78"/><ellipse cx="148" cy="93" rx="14" ry="6" fill="#A5D6A7" opacity="0.7"/><ellipse cx="48" cy="118" rx="12" ry="5" fill="#C8E6C9" opacity="0.75"/><circle cx="100" cy="114" r="8" fill="#FFF9C4" opacity="0.92"/><circle cx="100" cy="113" r="5" fill="#FFF176" opacity="0.82"/><circle cx="68" cy="87" r="4" fill="#4CAF50" opacity="0.88"/><circle cx="148" cy="120" r="4" fill="#4CAF50" opacity="0.85"/></svg>',
+  20: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#120406"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="85" width="164" height="40" rx="12" fill="#F5E6C8"/><path d="M22 108 Q22 87 100 84 Q178 87 178 108 Q178 130 100 128 Q22 130 22 108Z" fill="#C62828" opacity="0.82"/><rect x="32" y="90" width="16" height="16" rx="3.5" fill="#8B1A1A" opacity="0.88"/><rect x="54" y="96" width="14" height="14" rx="3" fill="#C62828" opacity="0.78"/><rect x="76" y="88" width="16" height="16" rx="3.5" fill="#FFF9C4" opacity="0.92"/><rect x="100" y="94" width="14" height="14" rx="3" fill="#FF8F00" opacity="0.88"/><rect x="122" y="89" width="16" height="16" rx="3.5" fill="#C62828" opacity="0.8"/><rect x="148" y="92" width="14" height="14" rx="3" fill="#FFF9C4" opacity="0.88"/><rect x="40" y="110" width="14" height="14" rx="3" fill="#FFF9C4" opacity="0.85"/><rect x="65" y="113" width="16" height="14" rx="3.5" fill="#8B1A1A" opacity="0.82"/><rect x="92" y="112" width="16" height="14" rx="3.5" fill="#FF8F00" opacity="0.8"/><rect x="118" y="110" width="14" height="14" rx="3" fill="#FFF9C4" opacity="0.85"/><rect x="142" y="112" width="14" height="14" rx="3" fill="#C62828" opacity="0.78"/><circle cx="80" cy="108" r="6" fill="#4CAF50" opacity="0.88"/><circle cx="108" cy="106" r="5.5" fill="#4CAF50" opacity="0.82"/><circle cx="134" cy="108" r="5" fill="#4CAF50" opacity="0.85"/></svg>',
+  21: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#180E00"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><path d="M22 110 Q22 87 100 84 Q178 87 178 110 Q178 132 100 130 Q22 132 22 110Z" fill="#FFD54F"/><path d="M28 106 Q40 90 72 92 Q95 94 125 88 Q148 84 170 98" fill="none" stroke="#FFB300" stroke-width="3"/><path d="M30 116 Q55 110 82 114 Q100 118 128 112 Q150 108 170 116" fill="none" stroke="#F57F17" stroke-width="2" opacity="0.65"/><ellipse cx="78" cy="96" rx="28" ry="11" fill="#FFF8E1" opacity="0.65"/><ellipse cx="138" cy="102" rx="20" ry="9" fill="#FFF8E1" opacity="0.55"/><ellipse cx="58" cy="118" rx="18" ry="7" fill="#FFF8DC" opacity="0.55"/><ellipse cx="95" cy="87" rx="16" ry="7" fill="#FF8F00" opacity="0.65"/><ellipse cx="100" cy="85" rx="12" ry="5" fill="#FFFFFF" opacity="0.88"/><circle cx="75" cy="83" r="4" fill="#4CAF50" opacity="0.78"/><circle cx="148" cy="122" r="4" fill="#4CAF50" opacity="0.75"/></svg>',
+  22: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#181008"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><ellipse cx="55" cy="108" rx="32" ry="22" fill="#C07820"/><ellipse cx="55" cy="104" rx="30" ry="20" fill="#D08828"/><ellipse cx="55" cy="100" rx="27" ry="17" fill="#E8A030"/><path d="M26 100 Q38 84 68 90 Q82 96 78 106" fill="none" stroke="#A06020" stroke-width="2.5"/><ellipse cx="112" cy="112" rx="32" ry="22" fill="#C07820"/><ellipse cx="112" cy="108" rx="30" ry="20" fill="#D08828"/><ellipse cx="112" cy="104" rx="27" ry="17" fill="#E8A030"/><path d="M83 104 Q95 88 125 94 Q139 100 135 110" fill="none" stroke="#A06020" stroke-width="2.5"/><ellipse cx="162" cy="106" rx="26" ry="18" fill="#C07820"/><ellipse cx="162" cy="102" rx="24" ry="16" fill="#D08828"/><ellipse cx="162" cy="98" rx="21" ry="13" fill="#E8A030"/><ellipse cx="42" cy="126" rx="22" ry="7" fill="#FFFDE7" opacity="0.88"/><ellipse cx="88" cy="128" rx="15" ry="6" fill="#E53935" opacity="0.78"/><ellipse cx="110" cy="128" rx="10" ry="5" fill="#E53935" opacity="0.72"/></svg>',
+  23: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#100808"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><rect x="22" y="96" width="156" height="32" rx="6" fill="#B03020"/><rect x="25" y="99" width="150" height="26" rx="5" fill="#D4A054"/><path d="M25 106 Q55 100 85 104 Q108 108 135 100 Q158 94 175 104" fill="none" stroke="#C89040" stroke-width="3"/><path d="M25 115 Q55 109 85 113 Q108 117 135 109 Q158 103 175 113" fill="none" stroke="#B07828" stroke-width="2.5" opacity="0.75"/><rect x="28" y="101" width="144" height="3" rx="1.5" fill="#FFFDE7" opacity="0.55"/><rect x="30" y="110" width="140" height="2.5" rx="1.2" fill="#FFFDE7" opacity="0.45"/><ellipse cx="60" cy="94" rx="12" ry="5" fill="#C03020" opacity="0.85"/><ellipse cx="100" cy="92" rx="10" ry="4.5" fill="#B02010" opacity="0.78"/><ellipse cx="140" cy="94" rx="10" ry="4.5" fill="#C03020" opacity="0.82"/><circle cx="68" cy="122" r="9" fill="#FFFDE7" opacity="0.68"/><circle cx="132" cy="122" r="9" fill="#FFFDE7" opacity="0.65"/></svg>'
+};
+
 const MENU = [
   // ── ПЕРШІ СТРАВИ (300 г / 50 грн) ──
   {
     id:1, cat:'Перші страви', name:'Борщ', sub:'300 г · традиційний з м\'ясом', price:50,
-    img:'https://images.unsplash.com/photo-1645696301019-35adcc18cdf5?w=400&q=80',
     emoji:'🍲',
     techcard:{
       portion:300, cal:185, b:8.2, f:7.4, c:18.6,
@@ -476,7 +579,6 @@ const MENU = [
   },
   {
     id:2, cat:'Перші страви', name:'Суп харчо', sub:'300 г · з рисом та спеціями', price:50,
-    img:'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&q=80',
     emoji:'🫕',
     techcard:{
       portion:300, cal:195, b:9.4, f:7.8, c:20.2,
@@ -496,7 +598,6 @@ const MENU = [
   },
   {
     id:3, cat:'Перші страви', name:'Гороховий суп', sub:'300 г · з м\'ясом та часником', price:50,
-    img:'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=400&q=80',
     emoji:'🥣',
     techcard:{
       portion:300, cal:210, b:11.2, f:6.8, c:24.5,
@@ -516,7 +617,6 @@ const MENU = [
   },
   {
     id:4, cat:'Перші страви', name:'Грибний вершковий суп', sub:'300 г · крем-суп з вершками', price:50,
-    img:'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=400&q=80',
     emoji:'🍄',
     techcard:{
       portion:300, cal:178, b:5.8, f:10.4, c:16.2,
@@ -539,7 +639,6 @@ const MENU = [
   // ── ОСНОВНІ СТРАВИ (100 г) ──
   {
     id:5, cat:'Основні страви', name:'Куряче філе медово-гірчичне', sub:'100 г · з медом та гірчицею', price:65,
-    img:'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80',
     emoji:'🍗',
     techcard:{
       portion:100, cal:168, b:18.4, f:7.2, c:6.8,
@@ -557,7 +656,6 @@ const MENU = [
   },
   {
     id:6, cat:'Основні страви', name:'Хек під овочевою скоринкою', sub:'100 г · риба з овочевою шапкою', price:75,
-    img:'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80',
     emoji:'🐟',
     techcard:{
       portion:100, cal:142, b:16.8, f:5.4, c:7.2,
@@ -576,7 +674,6 @@ const MENU = [
   },
   {
     id:7, cat:'Основні страви', name:'Свинина у вершково-цибулевому соусі', sub:'100 г · з ніжним соусом', price:75,
-    img:'https://images.unsplash.com/photo-1558030006-450675393462?w=400&q=80',
     emoji:'🥩',
     techcard:{
       portion:100, cal:224, b:17.2, f:14.8, c:5.4,
@@ -595,7 +692,6 @@ const MENU = [
   },
   {
     id:8, cat:'Основні страви', name:'Свиняча котлета з цибулевою підливою', sub:'100 г · домашня котлета', price:76,
-    img:'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400&q=80',
     emoji:'🍖',
     techcard:{
       portion:100, cal:238, b:16.4, f:16.2, c:7.8,
@@ -613,7 +709,6 @@ const MENU = [
   },
   {
     id:9, cat:'Основні страви', name:'Яловичина у вишневому соусі', sub:'100 г · фірмова страва', price:85,
-    img:'https://images.unsplash.com/photo-1544025162-d76538485f2c?w=400&q=80',
     emoji:'🫀',
     techcard:{
       portion:100, cal:198, b:19.8, f:10.4, c:8.2,
@@ -632,7 +727,6 @@ const MENU = [
   },
   {
     id:10, cat:'Основні страви', name:'Тефтелі в томатному соусі', sub:'100 г · зі свинини з рисом', price:76,
-    img:'https://images.unsplash.com/photo-1529042355636-0a8a61d00f40?w=400&q=80',
     emoji:'🫙',
     techcard:{
       portion:100, cal:188, b:14.2, f:10.8, c:9.6,
@@ -654,7 +748,6 @@ const MENU = [
   // ── ГАРНІРИ (200 г) ──
   {
     id:11, cat:'Гарніри', name:'Пюре з маслом', sub:'200 г · вершкове', price:30,
-    img:'https://images.unsplash.com/photo-1600336153113-d66c79de3e91?w=400&q=80',
     emoji:'🥔',
     techcard:{
       portion:200, cal:148, b:3.2, f:5.8, c:22.4,
@@ -670,7 +763,6 @@ const MENU = [
   },
   {
     id:12, cat:'Гарніри', name:'Гречка з карамелізованою цибулею', sub:'200 г · з вершковим маслом', price:30,
-    img:'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80',
     emoji:'🌾',
     techcard:{
       portion:200, cal:162, b:6.8, f:5.4, c:24.2,
@@ -687,7 +779,6 @@ const MENU = [
   },
   {
     id:13, cat:'Гарніри', name:'Рис з овочами', sub:'200 г · з морквою та цибулею', price:30,
-    img:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&q=80',
     emoji:'🍚',
     techcard:{
       portion:200, cal:154, b:3.6, f:4.8, c:24.8,
@@ -705,7 +796,6 @@ const MENU = [
   },
   {
     id:14, cat:'Гарніри', name:'Гороховий гарнір', sub:'200 г · з маслом та цибулею', price:30,
-    img:'https://images.unsplash.com/photo-1574484284002-952d92456975?w=400&q=80',
     emoji:'🫘',
     techcard:{
       portion:200, cal:182, b:10.2, f:4.6, c:26.4,
@@ -723,7 +813,6 @@ const MENU = [
   // ── САЛАТИ (100–120 г) ──
   {
     id:15, cat:'Салати', name:'Капуста з яблуком та гірчичною заправкою', sub:'120 г · хрусткий салат', price:30,
-    img:'https://images.unsplash.com/photo-1623428187969-5da2dcea5ebf?w=400&q=80',
     emoji:'🥗',
     techcard:{
       portion:120, cal:68, b:1.8, f:2.4, c:10.4,
@@ -740,7 +829,6 @@ const MENU = [
   },
   {
     id:16, cat:'Салати', name:'Буряк з часником та чорносливом', sub:'110 г · зі сметаною', price:35,
-    img:'https://images.unsplash.com/photo-1593854310913-05cf7d0de2e3?w=400&q=80',
     emoji:'🫀',
     techcard:{
       portion:110, cal:112, b:3.4, f:4.8, c:15.6,
@@ -757,7 +845,6 @@ const MENU = [
   },
   {
     id:17, cat:'Салати', name:'Огірок, помідор, цибуля по-домашньому', sub:'100 г · свіжий салат', price:30,
-    img:'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&q=80',
     emoji:'🥒',
     techcard:{
       portion:100, cal:48, b:1.6, f:2.4, c:5.8,
@@ -774,7 +861,6 @@ const MENU = [
   },
   {
     id:18, cat:'Салати', name:'Вінегрет з маринованою цибулею', sub:'110 г · класичний', price:30,
-    img:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
     emoji:'🫛',
     techcard:{
       portion:110, cal:98, b:2.4, f:3.8, c:14.8,
@@ -792,7 +878,6 @@ const MENU = [
   },
   {
     id:19, cat:'Салати', name:'Курячий салат з фірмовою заправкою', sub:'120 г · з овочами', price:40,
-    img:'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&q=80',
     emoji:'🐓',
     techcard:{
       portion:120, cal:128, b:12.4, f:6.2, c:6.8,
@@ -810,7 +895,6 @@ const MENU = [
   },
   {
     id:20, cat:'Салати', name:'Вінегрет з маринованою цибулею', sub:'110 г · з горошком', price:30,
-    img:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80',
     emoji:'🫛',
     techcard:{
       portion:110, cal:98, b:2.4, f:3.8, c:14.8,
@@ -830,7 +914,6 @@ const MENU = [
   // ── ОКРЕМІ СТРАВИ ──
   {
     id:21, cat:'Окремі страви', name:'Мамалига з сиром', sub:'250 г · кукурудзяна каша', price:55,
-    img:'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400&q=80',
     emoji:'🌽',
     techcard:{
       portion:250, cal:224, b:8.4, f:7.8, c:30.2,
@@ -847,7 +930,6 @@ const MENU = [
   },
   {
     id:22, cat:'Окремі страви', name:'Сирники зі сметаною та джемом', sub:'210 г · 3–4 сирники', price:55,
-    img:'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&q=80',
     emoji:'🧀',
     techcard:{
       portion:210, cal:298, b:14.2, f:12.4, c:32.8,
@@ -866,7 +948,6 @@ const MENU = [
   },
   {
     id:23, cat:'Окремі страви', name:'Сулугуні в лаваші з зеленню', sub:'200 г · підсмажений на грилі', price:65,
-    img:'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80',
     emoji:'🫓',
     techcard:{
       portion:200, cal:312, b:14.8, f:16.4, c:28.2,
@@ -892,6 +973,22 @@ let deferredPrompt = null;
 let orderCounter = orders.length ? Math.max(...orders.map(o=>o.num)) : 0;
 let modalItemId  = null;
 let modalQty     = 1;
+let adminUnlocked = false;
+const ADMIN_PIN   = '2024';  // ← змінити на свій PIN
+
+// порції: завантажити зі сховища або ставимо 10 для всіх
+function loadPortions(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('yizhko_portions')||'{}');
+    // default 10 for new items
+    const out = {};
+    MENU.forEach(i=>{ out[i.id] = (saved[i.id] !== undefined) ? saved[i.id] : 10; });
+    return out;
+  } catch{ const out={}; MENU.forEach(i=>out[i.id]=10); return out; }
+}
+function savePortions(p){ localStorage.setItem('yizhko_portions', JSON.stringify(p)); }
+// init after MENU defined — filled below
+let portions = {};
 
 function loadOrders(){
   try{ return JSON.parse(localStorage.getItem('yizhko_orders')||'[]'); }
@@ -904,7 +1001,9 @@ function renderMenu(){
   const cats = [...new Set(MENU.map(i=>i.cat))];
   let html = '';
   cats.forEach(cat=>{
-    const items = MENU.filter(i=>i.cat===cat);
+    // filter out items with 0 portions (for client mode)
+    const items = MENU.filter(i=>i.cat===cat && (currentMode!=='client' || (portions[i.id]||0)>0));
+    if(!items.length) return;
     const catEmoji = {
       'Перші страви':'🍲','Основні страви':'🍽️','Гарніри':'🥔','Салати':'🥗','Окремі страви':'⭐'
     }[cat]||'🍴';
@@ -912,9 +1011,9 @@ function renderMenu(){
     html += '<div class="menu-grid">';
     items.forEach(item=>{
       const qty = cart[item.id]||0;
-      const imgTag = item.img
-        ? '<img class="card-img" src="' + item.img + '" alt="' + item.name + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
-          + '<div class="card-img-placeholder" style="display:none">' + item.emoji + '</div>'
+      const svgData = DISH_SVGS[item.id];
+      const imgTag = svgData
+        ? '<div class="card-img-svg">' + svgData + '</div>'
         : '<div class="card-img-placeholder">' + item.emoji + '</div>';
       const qtyHtml = qty > 0
         ? '<div class="card-qty"><button class="qty-btn" onclick="event.stopPropagation();changeQty(' + item.id + ',-1)">−</button><span class="qty-val">' + qty + '</span><button class="qty-btn" onclick="event.stopPropagation();changeQty(' + item.id + ',1)">+</button></div>'
@@ -927,7 +1026,7 @@ function renderMenu(){
         + '<div class="card-footer">'
         + '<div class="card-price">' + item.price + ' грн</div>'
         + '<div class="card-actions">'
-        + '<button class="tc-btn" onclick="event.stopPropagation();openTC(' + item.id + ')">ТК</button>'
+        + (currentMode==='kitchen' ? '<button class="tc-btn" onclick="event.stopPropagation();openTC(' + item.id + ')">ТК</button>' : '')
         + qtyHtml
         + '</div></div></div></div>';
     });
@@ -964,9 +1063,9 @@ function renderCart(){
     const qty  = cart[id];
     totalQty  += qty;
     totalPrice+= qty*item.price;
-    const imgHtml = item.img
-      ? '<img class="ci-img" src="' + item.img + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
-        + '<div class="ci-img-ph" style="display:none">' + item.emoji + '</div>'
+    const svgCart = DISH_SVGS[id];
+    const imgHtml = svgCart
+      ? '<div class="ci-img-ph ci-img-svg">' + svgCart + '</div>'
       : '<div class="ci-img-ph">' + item.emoji + '</div>';
     html += '<div class="cart-item">'
       + imgHtml
@@ -1017,6 +1116,7 @@ function submitOrder(){
   };
   orders.unshift(order);
   saveOrders();
+  decreasePortions(items);
   cart={};
   updateCartBadge();
   updateOrdersBadge();
@@ -1121,30 +1221,45 @@ function openTC(id){
   document.getElementById('mqVal').textContent   = modalQty;
 
   const imgArea = document.getElementById('tcImgArea');
-  imgArea.innerHTML = item.img
-    ? '<img class="modal-dish-img" src="' + item.img + '" onerror="this.parentElement.innerHTML=\'<div class=modal-dish-ph>' + item.emoji + '</div>\'">'
+  const svgModal = DISH_SVGS[item.id];
+  imgArea.innerHTML = svgModal
+    ? '<div class="modal-dish-svg">' + svgModal + '</div>'
     : '<div class="modal-dish-ph">' + item.emoji + '</div>';
-
   const totB = tc.ingredients.reduce((s,i)=>s+(i.b||0),0);
   const totN = tc.ingredients.reduce((s,i)=>s+(i.n||0),0);
   const rows = tc.ingredients.map(i=>
     '<tr><td>' + i.name + '</td><td>' + i.b + '</td><td>' + i.n + '</td><td>' + (i.l||0) + '%</td></tr>'
   ).join('');
 
-  document.getElementById('tcBody').innerHTML =
-    '<div class="tc-fact">' + tc.fact + '</div>'
-    + '<div class="tc-meta">'
-    + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.portion + '</div><div class="tc-meta-lbl">вихід, г</div></div>'
-    + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.cal + '</div><div class="tc-meta-lbl">ккал</div></div>'
-    + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.b + '</div><div class="tc-meta-lbl">білки, г</div></div>'
-    + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.f + '/' + tc.c + '</div><div class="tc-meta-lbl">жири/вугл.</div></div>'
-    + '</div>'
-    + '<div class="tc-section">Інгредієнти на 1 порцію</div>'
-    + '<table class="tc-table"><thead><tr><th>Найменування</th><th>Брутто</th><th>Нетто</th><th>Втрати</th></tr></thead>'
-    + '<tbody>' + rows + '</tbody>'
-    + '<tfoot><tr><td>Разом</td><td>' + Math.round(totB) + '</td><td>' + Math.round(totN) + '</td><td>—</td></tr></tfoot></table>'
-    + '<div class="tc-section">Технологія приготування</div>'
-    + '<div class="tc-tech">' + tc.tech + '</div>';
+  if(currentMode === 'kitchen'){
+    // full tech card for kitchen
+    document.getElementById('tcBody').innerHTML =
+      '<div class="tc-fact">' + tc.fact + '</div>'
+      + '<div class="tc-meta">'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.portion + '</div><div class="tc-meta-lbl">вихід, г</div></div>'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.cal + '</div><div class="tc-meta-lbl">ккал</div></div>'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.b + '</div><div class="tc-meta-lbl">білки, г</div></div>'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.f + '/' + tc.c + '</div><div class="tc-meta-lbl">жири/вугл.</div></div>'
+      + '</div>'
+      + '<div class="tc-section">Інгредієнти на 1 порцію</div>'
+      + '<table class="tc-table"><thead><tr><th>Найменування</th><th>Брутто</th><th>Нетто</th><th>Втрати</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody>'
+      + '<tfoot><tr><td>Разом</td><td>' + Math.round(totB) + '</td><td>' + Math.round(totN) + '</td><td>—</td></tr></tfoot></table>'
+      + '<div class="tc-section">Технологія приготування</div>'
+      + '<div class="tc-tech">' + tc.tech + '</div>';
+  } else {
+    // client sees only ingredients list + calories
+    const ingrChips = tc.ingredients.map(i=>'<span class="ingr-chip">' + i.name + '</span>').join('');
+    document.getElementById('tcBody').innerHTML =
+      '<div class="tc-meta">'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.portion + '</div><div class="tc-meta-lbl">вихід, г</div></div>'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.cal + '</div><div class="tc-meta-lbl">ккал</div></div>'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.b + '</div><div class="tc-meta-lbl">білки, г</div></div>'
+      + '<div class="tc-meta-item"><div class="tc-meta-val">' + tc.f + '/' + tc.c + '</div><div class="tc-meta-lbl">жири/вугл.</div></div>'
+      + '</div>'
+      + '<div class="tc-section">Склад страви</div>'
+      + '<div class="ingr-list">' + ingrChips + '</div>';
+  }
 
   document.getElementById('tcModal').classList.add('open');
   document.body.style.overflow='hidden';
@@ -1188,11 +1303,124 @@ function showTab(tab){
   if(tab==='stats')  renderStats();
 }
 function setMode(mode){
+  if(mode==='admin'){
+    if(!adminUnlocked){ renderAdmin(); showTab('admin'); return; }
+  }
   currentMode=mode;
   document.getElementById('modeClient').classList.toggle('active', mode==='client');
   document.getElementById('modeKitchen').classList.toggle('active', mode==='kitchen');
+  document.getElementById('modeAdmin').classList.toggle('active', mode==='admin');
+  // show/hide admin tab
+  document.getElementById('tab-admin').style.display = mode==='admin' ? 'flex' : 'none';
   if(mode==='kitchen') showTab('orders');
+  else if(mode==='admin') { renderAdmin(); showTab('admin'); }
   else showTab('menu');
+}
+
+
+// ══ ADMIN PANEL ═══════════════════════════════════════════
+function renderAdmin(){
+  const el = document.getElementById('adminContent');
+  if(!adminUnlocked){
+    el.innerHTML = '<div class="admin-panel-wrap">'
+      + '<div class="admin-pin-wrap">'
+      + '<p>🔐 Введіть PIN-код для входу в режим адміністратора</p>'
+      + '<input class="admin-pin-input" type="password" id="adminPinInput" maxlength="4" placeholder="••••" oninput="if(this.value.length===4)checkAdminPin()">'
+      + '<button class="admin-pin-btn" onclick="checkAdminPin()">Увійти</button>'
+      + '</div></div>';
+    setTimeout(()=>{ const inp=document.getElementById('adminPinInput'); if(inp) inp.focus(); },100);
+    return;
+  }
+  // unlocked — show portions editor
+  const cats = [...new Set(MENU.map(i=>i.cat))];
+  let html = '<div class="admin-panel-wrap">'
+    + '<div class="admin-header"><div class="admin-title">⚙️ Адмін-панель</div>'
+    + '<button onclick="logoutAdmin()" style="border:none;background:var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;color:var(--soft)">Вийти</button>'
+    + '</div>';
+  cats.forEach(cat=>{
+    html += '<div class="admin-section-label">' + cat + '</div>';
+    MENU.filter(i=>i.cat===cat).forEach(item=>{
+      const p = portions[item.id]||0;
+      const svg = DISH_SVGS[item.id] ? '<div class="admin-dish-svg">' + DISH_SVGS[item.id] + '</div>' : '<div class="admin-dish-svg" style="display:flex;align-items:center;justify-content:center;font-size:20px">' + item.emoji + '</div>';
+      html += '<div class="admin-dish-row' + (p===0?' sold-out':'') + '" id="arow-' + item.id + '">'
+        + svg
+        + '<div class="admin-dish-info"><div class="admin-dish-name">' + item.name + '</div>'
+        + '<div class="admin-dish-cat">' + item.price + ' грн</div></div>'
+        + '<div class="admin-qty-wrap">'
+        + '<button class="admin-qty-btn" onclick="adminQty(' + item.id + ',-1)">−</button>'
+        + '<span class="admin-qty-val' + (p===0?' zero':'') + '" id="aqv-' + item.id + '">' + p + '</span>'
+        + '<button class="admin-qty-btn" onclick="adminQty(' + item.id + ',1)">+</button>'
+        + '<button class="admin-qty-btn" onclick="adminQty(' + item.id + ',10)" title="+10" style="font-size:11px;width:auto;border-radius:8px;padding:0 8px">+10</button>'
+        + '</div>'
+        + (p===0 ? '<span class="sold-out-badge">Немає</span>' : '<span class="avail-badge">' + p + ' пор.</span>')
+        + '</div>';
+    });
+  });
+  html += '<button class="admin-save-btn" onclick="adminSave()">💾 Зберегти та оновити меню</button></div>';
+  el.innerHTML = html;
+}
+
+function checkAdminPin(){
+  const val = document.getElementById('adminPinInput')?.value;
+  if(val === ADMIN_PIN){
+    adminUnlocked = true;
+    currentMode = 'admin';
+    document.getElementById('modeAdmin').classList.add('active');
+    document.getElementById('modeClient').classList.remove('active');
+    document.getElementById('modeKitchen').classList.remove('active');
+    document.getElementById('tab-admin').style.display = 'flex';
+    renderAdmin();
+    showToast('✅ Режим адміна увімкнено');
+  } else {
+    showToast('❌ Невірний PIN');
+    const inp = document.getElementById('adminPinInput');
+    if(inp){ inp.value=''; inp.focus(); }
+  }
+}
+
+function adminQty(id, delta){
+  portions[id] = Math.max(0, (portions[id]||0) + delta);
+  // update UI without full re-render
+  const valEl = document.getElementById('aqv-' + id);
+  const rowEl = document.getElementById('arow-' + id);
+  const badgeEl = rowEl?.querySelector('.sold-out-badge, .avail-badge');
+  if(valEl){
+    valEl.textContent = portions[id];
+    valEl.className = 'admin-qty-val' + (portions[id]===0?' zero':'');
+  }
+  if(rowEl) rowEl.className = 'admin-dish-row' + (portions[id]===0?' sold-out':'');
+  if(badgeEl){
+    badgeEl.className = portions[id]===0 ? 'sold-out-badge' : 'avail-badge';
+    badgeEl.textContent = portions[id]===0 ? 'Немає' : portions[id]+' пор.';
+  }
+}
+
+function adminSave(){
+  savePortions(portions);
+  showToast('✅ Збережено! Меню оновлено.');
+  // re-render menu so client immediately sees changes
+  renderMenu();
+}
+
+function logoutAdmin(){
+  adminUnlocked = false;
+  currentMode = 'client';
+  document.getElementById('modeClient').classList.add('active');
+  document.getElementById('modeAdmin').classList.remove('active');
+  document.getElementById('modeKitchen').classList.remove('active');
+  document.getElementById('tab-admin').style.display = 'none';
+  showTab('menu');
+  showToast('Вийшли з адмін-режиму');
+}
+
+// ── also decrease portions when order submitted ──
+function decreasePortions(items){
+  items.forEach(item=>{
+    if(portions[item.id] !== undefined && portions[item.id] > 0){
+      portions[item.id] = Math.max(0, portions[item.id] - item.qty);
+    }
+  });
+  savePortions(portions);
 }
 
 // ══ TOAST ═════════════════════════════════════════════════
@@ -1226,6 +1454,7 @@ window.addEventListener('online', ()=>document.getElementById('offlineBar').clas
 window.addEventListener('offline',()=>document.getElementById('offlineBar').classList.add('show'));
 
 // ══ INIT ══════════════════════════════════════════════════
+portions = loadPortions();
 updateCartBadge();
 updateOrdersBadge();
 renderMenu();
