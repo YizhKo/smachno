@@ -1728,6 +1728,12 @@ async function submitKitchenRequest(){
   if(pass.length < 6)           { showToast('❌ Пароль має бути мінімум 6 символів'); return; }
   if(!firebaseReady || !db || !fbAuth){ showToast('⚠️ Firebase не підключено'); return; }
 
+  // якщо поточний користувач анонімний (раніше замовляв як клієнт) —
+  // вилогінюємо, щоб створити нормальний email/пароль акаунт
+  if(fbAuth.currentUser && fbAuth.currentUser.isAnonymous){
+    try{ await fbAuth.signOut(); }catch(e){}
+  }
+
   try{
     // 1. створюємо акаунт
     let cred;
