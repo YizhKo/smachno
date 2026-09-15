@@ -1757,6 +1757,8 @@ async function submitKitchenRequest(){
       }
     }
     const uid = cred.user.uid;
+// дати Firebase Auth оновити токен (інакше Firestore бачить стару сесію)
+await new Promise(r => setTimeout(r, 500));
 
     // 2. заявка
     const docRef = db.collection('kitchen_access').doc(normalizePhone(phone));
