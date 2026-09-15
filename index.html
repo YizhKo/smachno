@@ -1315,7 +1315,16 @@ function renderCart(){
   if(timeEl) timeEl.value = hh+':'+mm;
 }
 
-function submitOrder(){
+async function submitOrder(){
+  // авторизуємо клієнта анонімно ДО будь-яких дій
+  if(firebaseReady && fbAuth && !fbAuth.currentUser){
+    try{
+      await fbAuth.signInAnonymously();
+      console.log('Клієнт: авторизовано анонімно, uid =', fbAuth.currentUser.uid);
+    }catch(e){
+      console.warn('Anonymous sign-in failed', e);
+    }
+  }
   const name    = document.getElementById('custName')?.value.trim();
   const phone   = document.getElementById('custPhone')?.value.trim();
   const address = document.getElementById('custAddress')?.value.trim();
@@ -1331,15 +1340,10 @@ function submitOrder(){
   const total = items.reduce((s,i)=>s+i.price*i.qty,0);
   const submitBtn = document.querySelector('.submit-btn');
   if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Оформлюємо…'; }
-  nextOrderNumber().then(async function(num){
-    // анонімна авторизація клієнта — щоб він міг читати своє замовлення
-    let clientUid = null;
-    if(firebaseReady && fbAuth){
-      try{
-        if(!fbAuth.currentUser) await fbAuth.signInAnonymously();
-        clientUid = fbAuth.currentUser ? fbAuth.currentUser.uid : null;
-      }catch(e){ console.warn('Anonymous sign-in failed', e); }
-    }
+  nextOrderNumber().then(function(num){
+    const clientUid = (firebaseReady && fbAuth && fbAuth.currentUser)
+      ? fbAuth.currentUser.uid
+      : null;
     const baseOrder = {
       num, name, phone, address, time,
       items, total, status:'new',
