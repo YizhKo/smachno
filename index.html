@@ -1393,8 +1393,8 @@ function setMode(mode){
     if(!adminUnlocked){ renderAdmin(); showTab('admin'); return; }
   }
   if(mode==='kitchen' && !kitchenUnlocked){
-    renderKitchenGate();
     showTab('orders');
+    renderKitchenGate();
     return;
   }
   currentMode=mode;
