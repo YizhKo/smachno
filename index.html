@@ -697,16 +697,14 @@ function initOrdersSync(){
   }, function(err){ console.error('orders sync error', err); showToast('❌ Помилка синхронізації замовлень'); });
 }
 function nextOrderNumber(){
-  if(!firebaseReady) return Promise.resolve(++orderCounter);
-  const ref = db.collection('meta').doc('orderCounter');
-  return db.runTransaction(function(tx){
-    return tx.get(ref).then(function(snap){
-      const cur = snap.exists ? (snap.data().value||0) : 0;
-      const next = cur + 1;
-      tx.set(ref, {value:next});
-      return next;
-    });
-  });
+  // Не залежимо від meta/orderCounter: замовлення має відправлятися
+  // навіть якщо транзакція лічильника недоступна.
+  const key = 'yizhko_last_order_number';
+  let cur = Number(localStorage.getItem(key) || orderCounter || 0);
+  const next = Math.max(0, cur) + 1;
+  localStorage.setItem(key, String(next));
+  orderCounter = next;
+  return Promise.resolve(next);
 }
 
 // ══ MENU DATA ══════════════════════════════════════════════
@@ -1338,9 +1336,13 @@ function submitOrder(){
       date: new Date().toLocaleDateString('uk-UA'),
     };
     if(firebaseReady){
+      console.log('ЇжКо: надсилаємо замовлення в Firestore', baseOrder);
       return db.collection('orders').add(
         Object.assign({}, baseOrder, {createdAt: firebase.firestore.FieldValue.serverTimestamp()})
-      );
+      ).then(function(ref){
+        console.log('ЇжКо: замовлення записано, ID:', ref.id);
+        return ref;
+      });
     } else {
       orders.unshift(baseOrder);
       saveOrders();
