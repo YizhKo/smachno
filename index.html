@@ -1905,6 +1905,7 @@ if(firebaseReady && fbAuth){
 }
 
 function renderKitchenAdminSectionHtml(){
+    const kitchenSwitchBtn = '<button class="staff-btn" style="margin-top:8px" onclick="adminOpenKitchen()">👩‍🍳 Перейти в режим кухні</button>';
   if(!firebaseReady){
     return '<div class="admin-section-label" style="margin-top:22px">🔑 Доступ для кухні</div>'
       + '<div class="staff-admin-login"><p class="staff-admin-hint">Firebase ще не підключено в коді сайту (розділ FIREBASE на початку файлу) — без цього заявки працівників зберігатися не будуть.</p></div>';
