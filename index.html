@@ -600,6 +600,11 @@ const firebaseConfig = {
   messagingSenderId: "885338812187",
   appId: "1:885338812187:web:631e724ad226418450edbe"
 };
+
+// UID ЄДИНОГО адміністратора Firebase Authentication.
+// Вставте сюди UID свого адмін-акаунта з Firebase Console → Authentication → Users.
+const ADMIN_UID = "BayA7uUhSZN02CTaj8cnklcgYXw1";
+
 let db = null, fbAuth = null, firebaseReady = false;
 try{
   if(firebaseConfig.apiKey !== "ВСТАВТЕ_СЮДИ"){
@@ -673,7 +678,7 @@ function requestKitchenNotifications(){
 }
 
 function initOrdersSync(){
-  if(!firebaseReady) return;
+  if(!firebaseReady || !fbAuth || !fbAuth.currentUser) return;
   db.collection('orders').orderBy('num','desc').onSnapshot(function(snap){
     const incoming = snap.docs.map(d=>({ id:d.id, ...d.data() }));
     if(ordersSyncStarted){
@@ -1622,7 +1627,7 @@ async function verifyKitchenAccess(phone){
     const ok=!!data && data.status==='approved' && data.uid===fbAuth.currentUser.uid;
     if(!ok){ clearKitchenAccessCache(); kitchenUnlocked=false; updateKitchenButtonVisibility(); return false; }
     kitchenUnlocked=true; currentMode='kitchen'; document.getElementById('modeKitchen').classList.add('active');
-    document.getElementById('modeClient').classList.remove('active'); document.getElementById('ordersFilter').style.display=''; showTab('orders'); requestKitchenNotifications(); return true;
+    document.getElementById('modeClient').classList.remove('active'); document.getElementById('ordersFilter').style.display=''; showTab('orders'); requestKitchenNotifications(); initOrdersSync(); return true;
   }catch(e){ console.error(e); return false; }
 }
 
@@ -1669,6 +1674,7 @@ async function checkKitchenStatus(phone){
       showTab('orders');
       showToast('✅ Доступ підтверджено!');
     } else if(snap.exists){
+      if(snap.data().status==='approved' && snap.data().uid===fbAuth.currentUser?.uid){ await verifyKitchenAccess(phone); return; }
       renderKitchenStatus(phone, snap.data().status);
       showToast(snap.data().status==='pending' ? 'Ще очікує підтвердження' : 'Доступ відхилено');
     }
@@ -1730,11 +1736,35 @@ let staffAuthed = false;
 if(firebaseReady && fbAuth){
   fbAuth.onAuthStateChanged(function(user){
     const provider=user && user.providerData && user.providerData[0] ? user.providerData[0].providerId : '';
-    const isAdminSession=!!user && provider==='password'; staffAuthed=isAdminSession;
+    const isAdminSession=!!user && provider==='password' && user.uid===ADMIN_UID;
+    const isUnauthorizedPassword=!!user && provider==='password' && !isAdminSession;
+    staffAuthed=isAdminSession;
+
     if(isAdminSession){
       if(!adminUnlocked){ adminUnlocked=true; currentMode='admin'; document.getElementById('modeAdmin').classList.add('active'); document.getElementById('modeClient').classList.remove('active'); document.getElementById('modeKitchen').classList.remove('active'); document.getElementById('tab-admin').style.display='flex'; renderAdmin(); showTab('admin'); showToast('✅ Вхід виконано'); }
       else if(currentMode==='admin') renderAdmin();
-    }else if(!user && adminUnlocked){ adminUnlocked=false; currentMode='client'; document.getElementById('modeClient').classList.add('active'); document.getElementById('modeAdmin').classList.remove('active'); document.getElementById('modeKitchen').classList.remove('active'); document.getElementById('tab-admin').style.display='none'; showTab('menu'); }
+      initOrdersSync();
+    }else if(isUnauthorizedPassword){
+      adminUnlocked=false;
+      staffAuthed=false;
+      currentMode='client';
+      document.getElementById('modeClient').classList.add('active');
+      document.getElementById('modeAdmin').classList.remove('active');
+      document.getElementById('modeKitchen').classList.remove('active');
+      document.getElementById('tab-admin').style.display='none';
+      showTab('menu');
+      showToast('⛔ Цей Firebase-акаунт не має прав адміністратора');
+      fbAuth.signOut();
+    }else if(!user && adminUnlocked){
+      adminUnlocked=false;
+      staffAuthed=false;
+      currentMode='client';
+      document.getElementById('modeClient').classList.add('active');
+      document.getElementById('modeAdmin').classList.remove('active');
+      document.getElementById('modeKitchen').classList.remove('active');
+      document.getElementById('tab-admin').style.display='none';
+      showTab('menu');
+    }
   });
 }
 
@@ -1931,7 +1961,6 @@ applyStoredPrices();
 portions = loadPortions();
 updateKitchenButtonVisibility();
 updateCartBadge();
-initOrdersSync();
 updateOrdersBadge();
 renderMenu();
 </script>
