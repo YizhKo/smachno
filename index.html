@@ -394,6 +394,30 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     display:flex;align-items:center;gap:12px;
   }
   .admin-dish-svg{width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0;background:linear-gradient(145deg,#1a1a2e,#2d1b10)}
+  .admin-dish-img{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;display:block;background:#E8E4DC}
+  .admin-dish-emoji{width:48px;height:48px;border-radius:8px;flex-shrink:0;background:linear-gradient(145deg,#1a1a2e,#2d1b10);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .admin-price-wrap{display:flex;align-items:center;gap:4px;margin-top:3px}
+  .admin-price-input{
+    width:56px;border:1.5px solid var(--border);border-radius:6px;
+    padding:3px 5px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;
+    color:var(--dark);background:var(--bg);outline:none;text-align:right;
+  }
+  .admin-price-input:focus{border-color:var(--accent);background:var(--white)}
+  .admin-price-suffix{font-size:11px;color:var(--soft)}
+  /* staff (kitchen access) gate */
+  .staff-gate-wrap{background:var(--card);border-radius:var(--r);padding:26px 20px;margin-top:6px;text-align:center;box-shadow:var(--sh)}
+  .staff-gate-icon{font-size:40px;margin-bottom:8px}
+  .staff-gate-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:800;color:var(--dark);margin-bottom:4px}
+  .staff-gate-sub{font-size:12px;color:var(--soft);margin-bottom:16px;line-height:1.5}
+  .staff-input{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-family:'Inter',sans-serif;font-size:14px;outline:none;margin-bottom:10px;background:var(--bg);color:var(--text)}
+  .staff-input:focus{border-color:var(--accent);background:var(--white)}
+  .staff-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px}
+  .staff-btn.sec{background:transparent;color:var(--soft);border:1.5px solid var(--border)}
+  .staff-admin-login{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:10px}
+  .staff-admin-input{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;font-family:'Inter',sans-serif;font-size:13px;margin-bottom:8px;background:var(--bg);color:var(--text)}
+  .staff-admin-hint{font-size:11px;color:var(--soft);line-height:1.5;margin-top:6px}
+  .staff-badge-pending{font-size:10px;font-weight:700;background:#FEF3C7;color:#92400E;border-radius:5px;padding:2px 7px;flex-shrink:0}
+  .staff-badge-rejected{font-size:10px;font-weight:700;background:#FEE2E2;color:#991B1B;border-radius:5px;padding:2px 7px;flex-shrink:0}
   .admin-dish-svg svg{width:100%;height:100%;display:block}
   .admin-dish-info{flex:1;min-width:0}
   .admin-dish-name{font-size:13px;font-weight:700;color:var(--text)}
@@ -456,7 +480,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
   <div class="mode-toggle">
     <button class="mode-btn active" id="modeClient" onclick="setMode('client')">Клієнт</button>
-    <button class="mode-btn" id="modeKitchen" onclick="setMode('kitchen')">Кухня</button>
+    <button class="mode-btn" id="modeKitchen" onclick="setMode('kitchen')" style="display:none">Кухня</button>
     <button class="mode-btn" id="modeAdmin" onclick="setMode('admin')" title="Адмін">⚙️</button>
   </div>
 </div>
@@ -526,7 +550,35 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 
 <div class="toast" id="toast"></div>
 
+<!-- Firebase (для реєстрації/схвалення доступу до Кухні) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
 <script>
+// ══ FIREBASE ═══════════════════════════════════════════════
+// 1) Створіть безкоштовний проєкт на https://console.firebase.google.com
+// 2) Увімкніть Firestore Database та Authentication → Email/Password
+// 3) Створіть один обліковий запис адміна в Authentication (email+пароль)
+// 4) Вставте сюди свій конфіг із Project settings → Your apps → Web app
+const firebaseConfig = {
+  apiKey: "ВСТАВТЕ_СЮДИ",
+  authDomain: "ВАШ_ПРОЕКТ.firebaseapp.com",
+  projectId: "ВАШ_ПРОЕКТ",
+  storageBucket: "ВАШ_ПРОЕКТ.appspot.com",
+  messagingSenderId: "ВСТАВТЕ_СЮДИ",
+  appId: "ВСТАВТЕ_СЮДИ"
+};
+let db = null, fbAuth = null, firebaseReady = false;
+try{
+  if(firebaseConfig.apiKey !== "ВСТАВТЕ_СЮДИ"){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    fbAuth = firebase.auth();
+    firebaseReady = true;
+  }
+}catch(e){ console.error('Firebase init error', e); }
+
 // ══ MENU DATA ══════════════════════════════════════════════
 const DISH_SVGS = {
   1: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#2C1810"/><ellipse cx="100" cy="110" rx="85" ry="35" fill="#5C2020"/><ellipse cx="100" cy="100" rx="80" ry="32" fill="#8B1A1A"/><ellipse cx="100" cy="92" rx="74" ry="28" fill="#C0392B"/><ellipse cx="100" cy="88" rx="68" ry="22" fill="#D44000" opacity="0.3"/><ellipse cx="72" cy="82" rx="14" ry="9" fill="#8B0000" opacity="0.6"/><ellipse cx="125" cy="86" rx="10" ry="7" fill="#7B1818" opacity="0.5"/><ellipse cx="62" cy="88" rx="18" ry="11" fill="#FFFDE7" opacity="0.9"/><path d="M55 82 Q62 70 70 82 Q62 94 55 82Z" fill="#FFFFFF" opacity="0.95"/><circle cx="70" cy="74" r="3" fill="#4CAF50"/><circle cx="58" cy="70" r="2" fill="#4CAF50"/><circle cx="78" cy="76" r="2.5" fill="#388E3C"/><ellipse cx="100" cy="110" rx="85" ry="12" fill="#3D0A0A" opacity="0.5"/><rect x="15" y="118" width="170" height="28" rx="10" fill="#F5E6C8"/><rect x="12" y="114" width="176" height="10" rx="5" fill="#E8D5B0"/></svg>',
@@ -553,6 +605,54 @@ const DISH_SVGS = {
   22: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#181008"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><ellipse cx="55" cy="108" rx="32" ry="22" fill="#C07820"/><ellipse cx="55" cy="104" rx="30" ry="20" fill="#D08828"/><ellipse cx="55" cy="100" rx="27" ry="17" fill="#E8A030"/><path d="M26 100 Q38 84 68 90 Q82 96 78 106" fill="none" stroke="#A06020" stroke-width="2.5"/><ellipse cx="112" cy="112" rx="32" ry="22" fill="#C07820"/><ellipse cx="112" cy="108" rx="30" ry="20" fill="#D08828"/><ellipse cx="112" cy="104" rx="27" ry="17" fill="#E8A030"/><path d="M83 104 Q95 88 125 94 Q139 100 135 110" fill="none" stroke="#A06020" stroke-width="2.5"/><ellipse cx="162" cy="106" rx="26" ry="18" fill="#C07820"/><ellipse cx="162" cy="102" rx="24" ry="16" fill="#D08828"/><ellipse cx="162" cy="98" rx="21" ry="13" fill="#E8A030"/><ellipse cx="42" cy="126" rx="22" ry="7" fill="#FFFDE7" opacity="0.88"/><ellipse cx="88" cy="128" rx="15" ry="6" fill="#E53935" opacity="0.78"/><ellipse cx="110" cy="128" rx="10" ry="5" fill="#E53935" opacity="0.72"/></svg>',
   23: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#100808"/><ellipse cx="100" cy="125" rx="85" ry="20" fill="#E8D5B0"/><rect x="18" y="88" width="164" height="38" rx="12" fill="#F5E6C8"/><rect x="22" y="96" width="156" height="32" rx="6" fill="#B03020"/><rect x="25" y="99" width="150" height="26" rx="5" fill="#D4A054"/><path d="M25 106 Q55 100 85 104 Q108 108 135 100 Q158 94 175 104" fill="none" stroke="#C89040" stroke-width="3"/><path d="M25 115 Q55 109 85 113 Q108 117 135 109 Q158 103 175 113" fill="none" stroke="#B07828" stroke-width="2.5" opacity="0.75"/><rect x="28" y="101" width="144" height="3" rx="1.5" fill="#FFFDE7" opacity="0.55"/><rect x="30" y="110" width="140" height="2.5" rx="1.2" fill="#FFFDE7" opacity="0.45"/><ellipse cx="60" cy="94" rx="12" ry="5" fill="#C03020" opacity="0.85"/><ellipse cx="100" cy="92" rx="10" ry="4.5" fill="#B02010" opacity="0.78"/><ellipse cx="140" cy="94" rx="10" ry="4.5" fill="#C03020" opacity="0.82"/><circle cx="68" cy="122" r="9" fill="#FFFDE7" opacity="0.68"/><circle cx="132" cy="122" r="9" fill="#FFFDE7" opacity="0.65"/></svg>'
 };
+
+// Реальні фото страв (файли лежать поряд з index.html у репозиторії)
+const DISH_IMAGES = {
+  1:  '01 - Борщ.png',
+  2:  '02 - Суп харчо.png',
+  3:  '03 - Гороховий суп.png',
+  4:  '04 - Грибний вершковий суп.png',
+  5:  '05 - Куряче філе медово-гірчичне.png',
+  6:  '06 - Хек під овочевою скоринкою.png',
+  7:  '07 - Свинина у вершково-цибулевому соусі.png',
+  8:  '08 - Свинина котлета з цибулевою підливою.png',
+  9:  '09 - Яловичина у вишневому соусі.png',
+  10: '10 - Тефтелі в томатному соусі.png',
+  11: '11 - Пюре з маслом.png',
+  12: '12 - Гречка з карамелізованою цибулею.png',
+  13: '13 - Рис з овочами.png',
+  14: '14 - Гороховий гарнір.png',
+  15: '15 - Капуста з яблуком та гірчичною заправкою.png',
+  16: '16 - Буряк з часником та чорносливом.png',
+  17: '17 - Огірок, помідор, цибуля по-домашньому.png',
+  18: '18 - Вінегрет з маринованою цибулею.png',
+  19: '19 - Курячий салат з фірмовою заправкою.png',
+  21: '20 - Мамалига з сиром.png',
+  22: '21 - Сирники зі сметаною та джемом.png',
+  23: '22 - Сулугуні в лаваші з зеленню.png'
+};
+
+// Будує HTML для картинки страви. wrapClass — клас контейнера-заглушки
+// (SVG/емодзі), imgClass — клас самого <img>, коли реальне фото є.
+// Якщо фото немає або не завантажилось — показуємо SVG-ілюстрацію, а якщо й
+// того немає — емодзі.
+function dishFallbackHtml(item, svgClass, emojiClass){
+  const svgData = DISH_SVGS[item.id];
+  return svgData
+    ? '<div class="' + svgClass + '">' + svgData + '</div>'
+    : '<div class="' + emojiClass + '">' + item.emoji + '</div>';
+}
+function handleDishImgError(imgEl, id, svgClass, emojiClass){
+  const item = MENU.find(i=>i.id===id);
+  if(!item) return;
+  imgEl.outerHTML = dishFallbackHtml(item, svgClass, emojiClass);
+}
+function dishImgHtml(item, svgClass, emojiClass, imgClass){
+  const file = DISH_IMAGES[item.id];
+  if(!file) return dishFallbackHtml(item, svgClass, emojiClass);
+  const src = encodeURI(file);
+  return '<img class="' + imgClass + '" src="' + src + '" alt="' + item.name + '" loading="lazy" onerror="handleDishImgError(this,' + item.id + ',\'' + svgClass + '\',\'' + emojiClass + '\')">';
+}
 
 const MENU = [
   // ── ПЕРШІ СТРАВИ (300 г / 50 грн) ──
@@ -893,23 +993,6 @@ const MENU = [
       tech:'Готову курку охолодити та нарізати. Овочі нарізати соломкою. Перед подачею змішати компоненти із заправкою.',
     }
   },
-  {
-    id:20, cat:'Салати', name:'Вінегрет з маринованою цибулею', sub:'110 г · з горошком', price:30,
-    emoji:'🫛',
-    techcard:{
-      portion:110, cal:98, b:2.4, f:3.8, c:14.8,
-      fact:'Буряк окремо змішують з олією — так він не фарбує решту овочів.',
-      ingredients:[
-        {name:'Буряк',         b:30, n:25, l:17},
-        {name:'Картопля',      b:30, n:23, l:23},
-        {name:'Морква',        b:20, n:17, l:15},
-        {name:'Огірок солон.', b:15, n:13, l:13},
-        {name:'Горошок',       b:10, n:10, l:0},
-        {name:'Цибуля марин.', b:5,  n:4,  l:20},
-      ],
-      tech:'Охолоджені овочі нарізати однаковим кубиком. Буряк змішати з олією окремо. Додати горошок і мариновану цибулю.',
-    }
-  },
 
   // ── ОКРЕМІ СТРАВИ ──
   {
@@ -990,6 +1073,17 @@ function savePortions(p){ localStorage.setItem('yizhko_portions', JSON.stringify
 // init after MENU defined — filled below
 let portions = {};
 
+// ціни: завантажити збережені зі сховища й накласти поверх дефолтних з MENU
+function loadPrices(){
+  try{ return JSON.parse(localStorage.getItem('yizhko_prices')||'{}'); }
+  catch{ return {}; }
+}
+function savePrices(p){ localStorage.setItem('yizhko_prices', JSON.stringify(p)); }
+function applyStoredPrices(){
+  const saved = loadPrices();
+  MENU.forEach(i=>{ if(saved[i.id] !== undefined) i.price = saved[i.id]; });
+}
+
 function loadOrders(){
   try{ return JSON.parse(localStorage.getItem('yizhko_orders')||'[]'); }
   catch{ return []; }
@@ -1011,10 +1105,7 @@ function renderMenu(){
     html += '<div class="menu-grid">';
     items.forEach(item=>{
       const qty = cart[item.id]||0;
-      const svgData = DISH_SVGS[item.id];
-      const imgTag = svgData
-        ? '<div class="card-img-svg">' + svgData + '</div>'
-        : '<div class="card-img-placeholder">' + item.emoji + '</div>';
+      const imgTag = dishImgHtml(item, 'card-img-svg', 'card-img-placeholder', 'card-img');
       const qtyHtml = qty > 0
         ? '<div class="card-qty"><button class="qty-btn" onclick="event.stopPropagation();changeQty(' + item.id + ',-1)">−</button><span class="qty-val">' + qty + '</span><button class="qty-btn" onclick="event.stopPropagation();changeQty(' + item.id + ',1)">+</button></div>'
         : '<button class="add-btn" onclick="event.stopPropagation();changeQty(' + item.id + ',1)">+ Додати</button>';
@@ -1060,13 +1151,11 @@ function renderCart(){
   let html='';
   keys.forEach(id=>{
     const item = MENU.find(i=>i.id===id);
+    if(!item){ delete cart[id]; return; } // сторонню/видалену страву прибираємо з кошика
     const qty  = cart[id];
     totalQty  += qty;
     totalPrice+= qty*item.price;
-    const svgCart = DISH_SVGS[id];
-    const imgHtml = svgCart
-      ? '<div class="ci-img-ph ci-img-svg">' + svgCart + '</div>'
-      : '<div class="ci-img-ph">' + item.emoji + '</div>';
+    const imgHtml = dishImgHtml(item, 'ci-img-ph ci-img-svg', 'ci-img-ph', 'ci-img');
     html += '<div class="cart-item">'
       + imgHtml
       + '<div class="ci-info"><div class="ci-name">' + item.name + '</div>'
@@ -1221,10 +1310,7 @@ function openTC(id){
   document.getElementById('mqVal').textContent   = modalQty;
 
   const imgArea = document.getElementById('tcImgArea');
-  const svgModal = DISH_SVGS[item.id];
-  imgArea.innerHTML = svgModal
-    ? '<div class="modal-dish-svg">' + svgModal + '</div>'
-    : '<div class="modal-dish-ph">' + item.emoji + '</div>';
+  imgArea.innerHTML = dishImgHtml(item, 'modal-dish-svg', 'modal-dish-ph', 'modal-dish-img');
   const totB = tc.ingredients.reduce((s,i)=>s+(i.b||0),0);
   const totN = tc.ingredients.reduce((s,i)=>s+(i.n||0),0);
   const rows = tc.ingredients.map(i=>
@@ -1306,15 +1392,163 @@ function setMode(mode){
   if(mode==='admin'){
     if(!adminUnlocked){ renderAdmin(); showTab('admin'); return; }
   }
+  if(mode==='kitchen' && !kitchenUnlocked){
+    renderKitchenGate();
+    showTab('orders');
+    return;
+  }
   currentMode=mode;
   document.getElementById('modeClient').classList.toggle('active', mode==='client');
   document.getElementById('modeKitchen').classList.toggle('active', mode==='kitchen');
   document.getElementById('modeAdmin').classList.toggle('active', mode==='admin');
   // show/hide admin tab
   document.getElementById('tab-admin').style.display = mode==='admin' ? 'flex' : 'none';
-  if(mode==='kitchen') showTab('orders');
+  if(mode==='kitchen'){ document.getElementById('ordersFilter').style.display=''; showTab('orders'); }
   else if(mode==='admin') { renderAdmin(); showTab('admin'); }
   else showTab('menu');
+}
+
+// ══ KITCHEN ACCESS (реєстрація по телефону + схвалення адміном) ═══
+let kitchenUnlocked = false;
+
+function normalizePhone(str){ return (str||'').replace(/\D/g,''); }
+function getKitchenAccessCache(){
+  try{ return JSON.parse(localStorage.getItem('yizhko_kitchen_access')||'null'); }
+  catch{ return null; }
+}
+function setKitchenAccessCache(obj){ localStorage.setItem('yizhko_kitchen_access', JSON.stringify(obj)); }
+function clearKitchenAccessCache(){ localStorage.removeItem('yizhko_kitchen_access'); }
+
+// показує/ховає кнопку "Кухня" — клієнти її не бачать взагалі,
+// доки не перейдуть за спеціальним посиланням ?staff=1 (видати працівникам)
+// або вже не мають підтвердженого доступу на цьому пристрої
+function updateKitchenButtonVisibility(){
+  const isStaffLink = /(\?|&|#)staff=1/.test(location.href);
+  if(isStaffLink) localStorage.setItem('yizhko_staff_ui','1');
+  const cached = getKitchenAccessCache();
+  const show = isStaffLink || localStorage.getItem('yizhko_staff_ui')==='1' || (cached && cached.status==='approved');
+  const btn = document.getElementById('modeKitchen');
+  if(btn) btn.style.display = show ? '' : 'none';
+}
+
+function renderKitchenGate(){
+  document.getElementById('ordersFilter').style.display = 'none';
+  const cached = getKitchenAccessCache();
+  if(cached && cached.status === 'approved'){
+    // оптимістично відкриваємо на основі кешу, а в фоні перевіряємо, чи доступ ще дійсний
+    kitchenUnlocked = true;
+    currentMode = 'kitchen';
+    document.getElementById('modeKitchen').classList.add('active');
+    document.getElementById('modeClient').classList.remove('active');
+    document.getElementById('ordersFilter').style.display = '';
+    showTab('orders');
+    verifyKitchenAccess(cached.phone);
+    return;
+  }
+  document.getElementById('ordersContent').innerHTML =
+    '<div class="staff-gate-wrap">'
+    + '<div class="staff-gate-icon">👩‍🍳</div>'
+    + '<div class="staff-gate-title">Доступ для працівників кухні</div>'
+    + '<div class="staff-gate-sub">Вкажіть ім’я та номер телефону — адміністратор підтвердить доступ, і він відкриється на цьому пристрої.</div>'
+    + '<input type="text" id="staffName" class="staff-input" placeholder="Ваше ім’я" maxlength="40">'
+    + '<input type="tel" id="staffPhone" class="staff-input" placeholder="+380 XX XXX XX XX" maxlength="20">'
+    + '<button class="staff-btn" onclick="submitKitchenRequest()">Подати заявку</button>'
+    + '</div>';
+}
+
+async function verifyKitchenAccess(phone){
+  if(!firebaseReady || !db) return; // офлайн/не налаштовано — довіряємо кешу
+  try{
+    const snap = await db.collection('kitchen_access').doc(phone).get();
+    if(!snap.exists || snap.data().status !== 'approved'){
+      clearKitchenAccessCache();
+      kitchenUnlocked = false;
+      updateKitchenButtonVisibility();
+      if(currentMode==='kitchen'){
+        currentMode='client';
+        document.getElementById('modeClient').classList.add('active');
+        document.getElementById('modeKitchen').classList.remove('active');
+        showTab('menu');
+        showToast('⛔ Доступ до кухні відкликано');
+      }
+    }
+  }catch(e){ /* немає з'єднання — залишаємо кешований доступ активним */ }
+}
+
+async function submitKitchenRequest(){
+  const nameInp  = document.getElementById('staffName');
+  const phoneInp = document.getElementById('staffPhone');
+  const name = (nameInp?.value||'').trim();
+  const phoneRaw = (phoneInp?.value||'').trim();
+  const phone = normalizePhone(phoneRaw);
+  if(phone.length < 9){ showToast('❌ Введіть коректний номер телефону'); return; }
+  if(!firebaseReady || !db){ showToast('⚠️ Сервіс реєстрації ще не підключено. Зверніться до адміністратора.'); return; }
+  try{
+    const docRef = db.collection('kitchen_access').doc(phone);
+    const snap = await docRef.get();
+    if(snap.exists){
+      const data = snap.data();
+      if(data.status==='approved'){
+        setKitchenAccessCache({phone, status:'approved'});
+        updateKitchenButtonVisibility();
+        kitchenUnlocked = true;
+        currentMode = 'kitchen';
+        document.getElementById('modeKitchen').classList.add('active');
+        document.getElementById('modeClient').classList.remove('active');
+        document.getElementById('ordersFilter').style.display = '';
+        showTab('orders');
+        showToast('✅ Доступ підтверджено!');
+      } else if(data.status==='pending'){
+        renderKitchenStatus(phone, 'pending');
+      } else {
+        renderKitchenStatus(phone, 'rejected');
+      }
+    } else {
+      await docRef.set({
+        phone: phoneRaw, name: name,
+        status: 'pending',
+        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      renderKitchenStatus(phone, 'pending');
+    }
+  } catch(e){
+    showToast('❌ Помилка з’єднання. Спробуйте ще раз.');
+  }
+}
+
+function renderKitchenStatus(phone, status){
+  const msg = status==='pending'
+    ? { icon:'⏳', title:'Заявку подано', sub:'Очікуйте підтвердження від адміністратора. Спробуйте ще раз пізніше.' }
+    : { icon:'⛔', title:'Доступ відхилено', sub:'Зверніться до адміністратора закладу.' };
+  document.getElementById('ordersContent').innerHTML =
+    '<div class="staff-gate-wrap">'
+    + '<div class="staff-gate-icon">' + msg.icon + '</div>'
+    + '<div class="staff-gate-title">' + msg.title + '</div>'
+    + '<div class="staff-gate-sub">' + msg.sub + '</div>'
+    + '<button class="staff-btn" onclick="checkKitchenStatus(\'' + phone + '\')">Перевірити статус</button>'
+    + '<button class="staff-btn sec" onclick="renderKitchenGate()">← Назад</button>'
+    + '</div>';
+}
+
+async function checkKitchenStatus(phone){
+  if(!firebaseReady || !db) return;
+  try{
+    const snap = await db.collection('kitchen_access').doc(phone).get();
+    if(snap.exists && snap.data().status==='approved'){
+      setKitchenAccessCache({phone, status:'approved'});
+      updateKitchenButtonVisibility();
+      kitchenUnlocked = true;
+      currentMode = 'kitchen';
+      document.getElementById('modeKitchen').classList.add('active');
+      document.getElementById('modeClient').classList.remove('active');
+      document.getElementById('ordersFilter').style.display = '';
+      showTab('orders');
+      showToast('✅ Доступ підтверджено!');
+    } else if(snap.exists){
+      renderKitchenStatus(phone, snap.data().status);
+      showToast(snap.data().status==='pending' ? 'Ще очікує підтвердження' : 'Доступ відхилено');
+    }
+  }catch(e){ showToast('❌ Не вдалося перевірити. Перевірте з’єднання.'); }
 }
 
 
@@ -1341,11 +1575,11 @@ function renderAdmin(){
     html += '<div class="admin-section-label">' + cat + '</div>';
     MENU.filter(i=>i.cat===cat).forEach(item=>{
       const p = portions[item.id]||0;
-      const svg = DISH_SVGS[item.id] ? '<div class="admin-dish-svg">' + DISH_SVGS[item.id] + '</div>' : '<div class="admin-dish-svg" style="display:flex;align-items:center;justify-content:center;font-size:20px">' + item.emoji + '</div>';
+      const svg = dishImgHtml(item, 'admin-dish-svg', 'admin-dish-emoji', 'admin-dish-img');
       html += '<div class="admin-dish-row' + (p===0?' sold-out':'') + '" id="arow-' + item.id + '">'
         + svg
         + '<div class="admin-dish-info"><div class="admin-dish-name">' + item.name + '</div>'
-        + '<div class="admin-dish-cat">' + item.price + ' грн</div></div>'
+        + '<div class="admin-price-wrap"><input type="number" class="admin-price-input" id="apv-' + item.id + '" value="' + item.price + '" min="0" step="1" onclick="event.stopPropagation()"><span class="admin-price-suffix">грн</span></div></div>'
         + '<div class="admin-qty-wrap">'
         + '<button class="admin-qty-btn" onclick="adminQty(' + item.id + ',-1)">−</button>'
         + '<span class="admin-qty-val' + (p===0?' zero':'') + '" id="aqv-' + item.id + '">' + p + '</span>'
@@ -1356,8 +1590,88 @@ function renderAdmin(){
         + '</div>';
     });
   });
-  html += '<button class="admin-save-btn" onclick="adminSave()">💾 Зберегти та оновити меню</button></div>';
+  html += '<button class="admin-save-btn" onclick="adminSave()">💾 Зберегти та оновити меню</button>';
+  html += renderKitchenAdminSectionHtml();
+  html += '</div>';
   el.innerHTML = html;
+  if(staffAuthed) loadKitchenRequests();
+}
+
+// ── секція "Доступ для кухні" всередині адмінки ──
+let staffAuthed = false;
+if(firebaseReady && fbAuth){
+  fbAuth.onAuthStateChanged(function(user){
+    staffAuthed = !!user;
+    if(currentMode==='admin' && adminUnlocked) renderAdmin();
+  });
+}
+
+function renderKitchenAdminSectionHtml(){
+  if(!firebaseReady){
+    return '<div class="admin-section-label" style="margin-top:22px">🔑 Доступ для кухні</div>'
+      + '<div class="staff-admin-login"><p class="staff-admin-hint">Firebase ще не підключено в коді сайту (розділ FIREBASE на початку файлу) — без цього заявки працівників зберігатися не будуть.</p></div>';
+  }
+  if(!staffAuthed){
+    return '<div class="admin-section-label" style="margin-top:22px">🔑 Доступ для кухні</div>'
+      + '<div class="staff-admin-login">'
+      + '<input type="email" id="staffAdminEmail" class="staff-admin-input" placeholder="Email адміна">'
+      + '<input type="password" id="staffAdminPass" class="staff-admin-input" placeholder="Пароль">'
+      + '<button class="staff-btn" onclick="staffAdminSignIn()">Увійти й керувати заявками</button>'
+      + '<p class="staff-admin-hint">Це окремий, захищений вхід (Firebase Authentication) — саме він відкриває схвалення заявок кухні, PIN вище на це не впливає.</p>'
+      + '</div>';
+  }
+  return '<div class="admin-section-label" style="margin-top:22px">🔑 Доступ для кухні</div>'
+    + '<div id="kitchenReqList"><p class="staff-admin-hint">Завантаження заявок…</p></div>'
+    + '<button class="staff-btn sec" onclick="staffAdminSignOut()">Вийти з керування кухнею</button>';
+}
+
+function staffAdminSignIn(){
+  const email = document.getElementById('staffAdminEmail')?.value.trim();
+  const pass  = document.getElementById('staffAdminPass')?.value;
+  if(!email || !pass) return;
+  fbAuth.signInWithEmailAndPassword(email, pass)
+    .then(()=>{ showToast('✅ Вхід виконано'); })
+    .catch(()=>{ showToast('❌ Невірний email або пароль'); });
+}
+function staffAdminSignOut(){
+  fbAuth.signOut();
+}
+
+async function loadKitchenRequests(){
+  const el = document.getElementById('kitchenReqList');
+  if(!el || !db) return;
+  try{
+    const snap = await db.collection('kitchen_access').get();
+    if(snap.empty){ el.innerHTML = '<p class="staff-admin-hint">Заявок ще немає.</p>'; return; }
+    let html = '';
+    snap.forEach(doc=>{
+      const d = doc.data();
+      const badge = d.status==='approved'
+        ? '<span class="avail-badge">Схвалено</span>'
+        : d.status==='rejected'
+          ? '<span class="staff-badge-rejected">Відхилено</span>'
+          : '<span class="staff-badge-pending">Очікує</span>';
+      html += '<div class="admin-dish-row">'
+        + '<div class="admin-dish-info"><div class="admin-dish-name">' + (d.name || 'Без імені') + '</div>'
+        + '<div class="admin-dish-cat">' + (d.phone || doc.id) + '</div></div>'
+        + badge
+        + '<div class="admin-qty-wrap">'
+        + (d.status!=='approved' ? '<button class="admin-qty-btn" title="Схвалити" onclick="staffSetStatus(\'' + doc.id + '\',\'approved\')">✓</button>' : '<button class="admin-qty-btn" title="Скасувати доступ" onclick="staffSetStatus(\'' + doc.id + '\',\'rejected\')">⛔</button>')
+        + (d.status!=='rejected' && d.status!=='approved' ? '<button class="admin-qty-btn" title="Відхилити" onclick="staffSetStatus(\'' + doc.id + '\',\'rejected\')">✕</button>' : '')
+        + '</div></div>';
+    });
+    el.innerHTML = html;
+  }catch(e){
+    el.innerHTML = '<p class="staff-admin-hint">Помилка завантаження заявок. Перевірте правила безпеки Firestore.</p>';
+  }
+}
+
+async function staffSetStatus(phoneId, status){
+  try{
+    await db.collection('kitchen_access').doc(phoneId).update({status});
+    showToast(status==='approved' ? '✅ Доступ схвалено' : '⛔ Доступ скасовано/відхилено');
+    loadKitchenRequests();
+  }catch(e){ showToast('❌ Помилка. Перевірте правила безпеки Firestore.'); }
 }
 
 function checkAdminPin(){
@@ -1396,6 +1710,22 @@ function adminQty(id, delta){
 }
 
 function adminSave(){
+  // зчитати ціни з полів вводу та застосувати до MENU
+  let changedPrices = false;
+  MENU.forEach(item=>{
+    const inp = document.getElementById('apv-' + item.id);
+    if(!inp) return;
+    const val = parseFloat(inp.value);
+    if(!isNaN(val) && val >= 0 && val !== item.price){
+      item.price = val;
+      changedPrices = true;
+    }
+  });
+  if(changedPrices){
+    const priceMap = {};
+    MENU.forEach(i=>{ priceMap[i.id] = i.price; });
+    savePrices(priceMap);
+  }
   savePortions(portions);
   showToast('✅ Збережено! Меню оновлено.');
   // re-render menu so client immediately sees changes
@@ -1454,7 +1784,9 @@ window.addEventListener('online', ()=>document.getElementById('offlineBar').clas
 window.addEventListener('offline',()=>document.getElementById('offlineBar').classList.add('show'));
 
 // ══ INIT ══════════════════════════════════════════════════
+applyStoredPrices();
 portions = loadPortions();
+updateKitchenButtonVisibility();
 updateCartBadge();
 updateOrdersBadge();
 renderMenu();
