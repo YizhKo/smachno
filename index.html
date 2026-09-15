@@ -456,6 +456,20 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     border-radius:20px;padding:4px 10px;
     font-size:11px;color:var(--text-mid);font-weight:500;
   }
+
+  .admin-pin-wrap input[type=email],
+  .admin-pin-wrap input[type=password]{
+    display:block;width:100%;box-sizing:border-box;
+    border:1.5px solid var(--border);border-radius:9px;
+    padding:11px 13px;font-family:'Inter',sans-serif;
+    font-size:14px;letter-spacing:normal;
+    background:var(--bg);color:var(--text);
+    outline:none;margin-bottom:10px;
+  }
+  .admin-pin-wrap input[type=email]:focus,
+  .admin-pin-wrap input[type=password]:focus{
+    border-color:var(--accent);background:var(--white);
+  }
 </style>
 </head>
 <body>
@@ -1058,7 +1072,6 @@ let orderCounter = orders.length ? Math.max(...orders.map(o=>o.num)) : 0;
 let modalItemId  = null;
 let modalQty     = 1;
 let adminUnlocked = false;
-const ADMIN_PIN   = '2024';  // ← змінити на свій PIN
 
 // порції: завантажити зі сховища або ставимо 10 для всіх
 function loadPortions(){
@@ -1558,18 +1571,20 @@ function renderAdmin(){
   if(!adminUnlocked){
     el.innerHTML = '<div class="admin-panel-wrap">'
       + '<div class="admin-pin-wrap">'
-      + '<p>🔐 Введіть PIN-код для входу в режим адміністратора</p>'
-      + '<input class="admin-pin-input" type="password" id="adminPinInput" maxlength="4" placeholder="••••" oninput="if(this.value.length===4)checkAdminPin()">'
-      + '<button class="admin-pin-btn" onclick="checkAdminPin()">Увійти</button>'
+      + '<p style="font-size:13px;color:var(--soft);margin-bottom:14px">🔐 Вхід для адміністратора</p>'
+      + '<input type="email" id="adminEmailInput" class="admin-pin-input" style="width:100%;font-size:14px;letter-spacing:0;margin-bottom:10px" placeholder="Email адміна">'
+      + '<input type="password" id="adminPassInput" class="admin-pin-input" style="width:100%;font-size:14px;letter-spacing:2px;margin-bottom:10px" placeholder="Пароль">'
+      + '<button class="admin-pin-btn" id="adminSignInBtn" onclick="adminSignIn()">Увійти</button>'
+      + '<p id="adminSignInErr" style="color:#C0392B;font-size:11px;margin-top:8px;min-height:16px"></p>'
       + '</div></div>';
-    setTimeout(()=>{ const inp=document.getElementById('adminPinInput'); if(inp) inp.focus(); },100);
+    setTimeout(()=>{ const inp=document.getElementById('adminEmailInput'); if(inp) inp.focus(); },100);
     return;
   }
   // unlocked — show portions editor
   const cats = [...new Set(MENU.map(i=>i.cat))];
   let html = '<div class="admin-panel-wrap">'
     + '<div class="admin-header"><div class="admin-title">⚙️ Адмін-панель</div>'
-    + '<button onclick="logoutAdmin()" style="border:none;background:var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;color:var(--soft)">Вийти</button>'
+    + '<button onclick="adminSignOut()" style="border:none;background:var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;color:var(--soft)">Вийти</button>'
     + '</div>';
   cats.forEach(cat=>{
     html += '<div class="admin-section-label">' + cat + '</div>';
@@ -1599,10 +1614,41 @@ function renderAdmin(){
 
 // ── секція "Доступ для кухні" всередині адмінки ──
 let staffAuthed = false;
+
+// ── Єдиний onAuthStateChanged: обробляє і адміна і кухню ──
 if(firebaseReady && fbAuth){
   fbAuth.onAuthStateChanged(function(user){
     staffAuthed = !!user;
-    if(currentMode==='admin' && adminUnlocked) renderAdmin();
+
+    if(user){
+      // Перевіряємо чи це адмін-акаунт через custom claim або email whitelist
+      // Простий варіант: якщо увійшов — це адмін (email/пароль у Firebase Authentication)
+      if(!adminUnlocked){
+        adminUnlocked = true;
+        currentMode = 'admin';
+        document.getElementById('modeAdmin').classList.add('active');
+        document.getElementById('modeClient').classList.remove('active');
+        document.getElementById('modeKitchen').classList.remove('active');
+        document.getElementById('tab-admin').style.display = 'flex';
+        renderAdmin();
+        showTab('admin');
+        showToast('✅ Вхід виконано');
+      } else {
+        // вже в адмінці — просто перемалюємо (для секції кухні)
+        if(currentMode==='admin') renderAdmin();
+      }
+    } else {
+      // вийшли з Firebase — якщо були в адмінці, закриваємо
+      if(adminUnlocked){
+        adminUnlocked = false;
+        currentMode = 'client';
+        document.getElementById('modeClient').classList.add('active');
+        document.getElementById('modeAdmin').classList.remove('active');
+        document.getElementById('modeKitchen').classList.remove('active');
+        document.getElementById('tab-admin').style.display = 'none';
+        showTab('menu');
+      }
+    }
   });
 }
 
@@ -1674,22 +1720,40 @@ async function staffSetStatus(phoneId, status){
   }catch(e){ showToast('❌ Помилка. Перевірте правила безпеки Firestore.'); }
 }
 
-function checkAdminPin(){
-  const val = document.getElementById('adminPinInput')?.value;
-  if(val === ADMIN_PIN){
-    adminUnlocked = true;
-    currentMode = 'admin';
-    document.getElementById('modeAdmin').classList.add('active');
-    document.getElementById('modeClient').classList.remove('active');
-    document.getElementById('modeKitchen').classList.remove('active');
-    document.getElementById('tab-admin').style.display = 'flex';
-    renderAdmin();
-    showToast('✅ Режим адміна увімкнено');
-  } else {
-    showToast('❌ Невірний PIN');
-    const inp = document.getElementById('adminPinInput');
-    if(inp){ inp.value=''; inp.focus(); }
+async function adminSignIn(){
+  if(!firebaseReady || !fbAuth){
+    showToast('❌ Firebase не підключено');
+    return;
   }
+  const email = document.getElementById('adminEmailInput')?.value.trim();
+  const pass  = document.getElementById('adminPassInput')?.value;
+  const errEl = document.getElementById('adminSignInErr');
+  const btn   = document.getElementById('adminSignInBtn');
+  if(!email || !pass){
+    if(errEl) errEl.textContent = 'Введіть email і пароль';
+    return;
+  }
+  if(btn){ btn.disabled = true; btn.textContent = 'Вхід…'; }
+  try {
+    await fbAuth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged нижче спрацює і відкриє адмінку
+  } catch(e) {
+    if(btn){ btn.disabled = false; btn.textContent = 'Увійти'; }
+    if(errEl) errEl.textContent = 'Невірний email або пароль';
+    showToast('❌ Невірний email або пароль');
+  }
+}
+
+function adminSignOut(){
+  if(fbAuth) fbAuth.signOut();
+  adminUnlocked = false;
+  currentMode = 'client';
+  document.getElementById('modeClient').classList.add('active');
+  document.getElementById('modeAdmin').classList.remove('active');
+  document.getElementById('modeKitchen').classList.remove('active');
+  document.getElementById('tab-admin').style.display = 'none';
+  showTab('menu');
+  showToast('Вийшли з адмін-режиму');
 }
 
 function adminQty(id, delta){
@@ -1732,16 +1796,7 @@ function adminSave(){
   renderMenu();
 }
 
-function logoutAdmin(){
-  adminUnlocked = false;
-  currentMode = 'client';
-  document.getElementById('modeClient').classList.add('active');
-  document.getElementById('modeAdmin').classList.remove('active');
-  document.getElementById('modeKitchen').classList.remove('active');
-  document.getElementById('tab-admin').style.display = 'none';
-  showTab('menu');
-  showToast('Вийшли з адмін-режиму');
-}
+function logoutAdmin(){ adminSignOut(); }
 
 // ── also decrease portions when order submitted ──
 function decreasePortions(items){
