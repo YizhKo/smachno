@@ -594,6 +594,29 @@ try{
   }
 }catch(e){ console.error('Firebase init error', e); }
 
+// ── синхронізація замовлень між усіма пристроями через Firestore ──
+function initOrdersSync(){
+  if(!firebaseReady) return;
+  db.collection('orders').orderBy('num','desc').onSnapshot(function(snap){
+    orders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    updateOrdersBadge();
+    const panel = document.getElementById('panel-orders');
+    if(panel && panel.classList.contains('active')) renderOrders();
+  }, function(err){ console.error('orders sync error', err); });
+}
+function nextOrderNumber(){
+  if(!firebaseReady) return Promise.resolve(++orderCounter);
+  const ref = db.collection('meta').doc('orderCounter');
+  return db.runTransaction(function(tx){
+    return tx.get(ref).then(function(snap){
+      const cur = snap.exists ? (snap.data().value||0) : 0;
+      const next = cur + 1;
+      tx.set(ref, {value:next});
+      return next;
+    });
+  });
+}
+
 // ══ MENU DATA ══════════════════════════════════════════════
 const DISH_SVGS = {
   1: '<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="150" fill="#2C1810"/><ellipse cx="100" cy="110" rx="85" ry="35" fill="#5C2020"/><ellipse cx="100" cy="100" rx="80" ry="32" fill="#8B1A1A"/><ellipse cx="100" cy="92" rx="74" ry="28" fill="#C0392B"/><ellipse cx="100" cy="88" rx="68" ry="22" fill="#D44000" opacity="0.3"/><ellipse cx="72" cy="82" rx="14" ry="9" fill="#8B0000" opacity="0.6"/><ellipse cx="125" cy="86" rx="10" ry="7" fill="#7B1818" opacity="0.5"/><ellipse cx="62" cy="88" rx="18" ry="11" fill="#FFFDE7" opacity="0.9"/><path d="M55 82 Q62 70 70 82 Q62 94 55 82Z" fill="#FFFFFF" opacity="0.95"/><circle cx="70" cy="74" r="3" fill="#4CAF50"/><circle cx="58" cy="70" r="2" fill="#4CAF50"/><circle cx="78" cy="76" r="2.5" fill="#388E3C"/><ellipse cx="100" cy="110" rx="85" ry="12" fill="#3D0A0A" opacity="0.5"/><rect x="15" y="118" width="170" height="28" rx="10" fill="#F5E6C8"/><rect x="12" y="114" width="176" height="10" rx="5" fill="#E8D5B0"/></svg>',
@@ -1213,21 +1236,37 @@ function submitOrder(){
     return {id:+id, name:item.name, emoji:item.emoji, price:item.price, qty};
   });
   const total = items.reduce((s,i)=>s+i.price*i.qty,0);
-  orderCounter++;
-  const order = {
-    num:orderCounter, name, phone, address, time,
-    items, total, status:'new',
-    created: new Date().toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'}),
-    date: new Date().toLocaleDateString('uk-UA'),
-  };
-  orders.unshift(order);
-  saveOrders();
-  decreasePortions(items);
-  cart={};
-  updateCartBadge();
-  updateOrdersBadge();
-  showToast('✅ Замовлення №' + orderCounter + ' прийнято!');
-  showTab('orders');
+  const submitBtn = document.querySelector('.submit-btn');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Оформлюємо…'; }
+  nextOrderNumber().then(function(num){
+    const baseOrder = {
+      num, name, phone, address, time,
+      items, total, status:'new',
+      created: new Date().toLocaleTimeString('uk-UA',{hour:'2-digit',minute:'2-digit'}),
+      date: new Date().toLocaleDateString('uk-UA'),
+    };
+    if(firebaseReady){
+      return db.collection('orders').add(
+        Object.assign({}, baseOrder, {createdAt: firebase.firestore.FieldValue.serverTimestamp()})
+      );
+    } else {
+      orders.unshift(baseOrder);
+      saveOrders();
+      return Promise.resolve();
+    }
+  }).then(function(){
+    decreasePortions(items);
+    cart={};
+    updateCartBadge();
+    updateOrdersBadge();
+    showToast('✅ Замовлення прийнято!');
+    showTab('orders');
+  }).catch(function(e){
+    console.error(e);
+    showToast('❌ Не вдалося надіслати замовлення. Перевірте інтернет.');
+  }).finally(function(){
+    if(submitBtn){ submitBtn.disabled = false; }
+  });
 }
 
 // ══ RENDER ORDERS ═════════════════════════════════════════
@@ -1271,14 +1310,29 @@ function renderOrders(){
 }
 function setStatus(num,status){
   const o = orders.find(o=>o.num===num);
-  if(o){ o.status=status; saveOrders(); updateOrdersBadge(); renderOrders(); }
+  if(!o) return;
   const labels={preparing:'готується',ready:'готово!',done:'видано'};
-  showToast('№' + num + ': ' + (labels[status]||status));
+  if(firebaseReady && o.id){
+    db.collection('orders').doc(o.id).update({status})
+      .then(()=>showToast('№' + num + ': ' + (labels[status]||status)))
+      .catch(()=>showToast('❌ Не вдалося оновити статус'));
+  } else {
+    o.status=status; saveOrders(); updateOrdersBadge(); renderOrders();
+    showToast('№' + num + ': ' + (labels[status]||status));
+  }
 }
 function cancelOrder(num){
-  orders=orders.filter(o=>o.num!==num);
-  saveOrders(); updateOrdersBadge(); renderOrders();
-  showToast('Замовлення №' + num + ' скасовано');
+  const o = orders.find(o=>o.num===num);
+  if(!o) return;
+  if(firebaseReady && o.id){
+    db.collection('orders').doc(o.id).delete()
+      .then(()=>showToast('Замовлення №' + num + ' скасовано'))
+      .catch(()=>showToast('❌ Не вдалося скасувати замовлення'));
+  } else {
+    orders=orders.filter(o=>o.num!==num);
+    saveOrders(); updateOrdersBadge(); renderOrders();
+    showToast('Замовлення №' + num + ' скасовано');
+  }
 }
 function filterOrders(f){
   currentFilter=f;
@@ -1843,6 +1897,7 @@ applyStoredPrices();
 portions = loadPortions();
 updateKitchenButtonVisibility();
 updateCartBadge();
+initOrdersSync();
 updateOrdersBadge();
 renderMenu();
 </script>
