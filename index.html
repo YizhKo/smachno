@@ -480,7 +480,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
   <div class="mode-toggle">
     <button class="mode-btn active" id="modeClient" onclick="setMode('client')">Клієнт</button>
-    <button class="mode-btn" id="modeKitchen" onclick="setMode('kitchen')" style="display:none">Кухня</button>
+    <button class="mode-btn" id="modeKitchen" onclick="setMode('kitchen')">Кухня</button>
     <button class="mode-btn" id="modeAdmin" onclick="setMode('admin')" title="Адмін">⚙️</button>
   </div>
 </div>
@@ -1419,16 +1419,11 @@ function getKitchenAccessCache(){
 function setKitchenAccessCache(obj){ localStorage.setItem('yizhko_kitchen_access', JSON.stringify(obj)); }
 function clearKitchenAccessCache(){ localStorage.removeItem('yizhko_kitchen_access'); }
 
-// показує/ховає кнопку "Кухня" — клієнти її не бачать взагалі,
-// доки не перейдуть за спеціальним посиланням ?staff=1 (видати працівникам)
-// або вже не мають підтвердженого доступу на цьому пристрої
+// кнопка "Кухня" видима завжди; сам доступ до вмісту все одно
+// захищений формою заявки (ім'я+телефон) і схваленням адміна
 function updateKitchenButtonVisibility(){
-  const isStaffLink = /(\?|&|#)staff=1/.test(location.href);
-  if(isStaffLink) localStorage.setItem('yizhko_staff_ui','1');
-  const cached = getKitchenAccessCache();
-  const show = isStaffLink || localStorage.getItem('yizhko_staff_ui')==='1' || (cached && cached.status==='approved');
   const btn = document.getElementById('modeKitchen');
-  if(btn) btn.style.display = show ? '' : 'none';
+  if(btn) btn.style.display = '';
 }
 
 function renderKitchenGate(){
